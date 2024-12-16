@@ -12,4 +12,6 @@ Local AI processing with LLaMA for text generation and contextual responses.<br>
 Web-Based Interface(Work in Progress):<br>
 Interactive frontend using HTML, CSS, and JavaScript.<br>
 Offline Functionality:<br>
-No internet required for running the AI system.
+No internet required for running the AI system. <br> <br>
+
+### Author:- Pushkar Shinde
