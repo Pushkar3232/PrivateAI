@@ -2,7 +2,9 @@ import React from 'react'
 
 const App = () => {
   return (
-    <div>App</div>
+    <>
+    <h1 className='text-white text-6xl font-mono flex justify-center'>Chat</h1>
+    </>
   )
 }
 
