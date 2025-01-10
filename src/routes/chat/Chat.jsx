@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
+import Response from "../../components/Response";
 
 const Chat = () => {
+    const [data, setData] = useState('')
   return (
-    <>
-    <h1 className='text-8xl font-mono justify-center'>Chat</h1>
-    </>
+    <div className="w-full h-full bg-slate-950 p-4">
+    <Response data="My Data"/>
+    </div>
   )
 }
 
