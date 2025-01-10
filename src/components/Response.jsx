@@ -4,9 +4,9 @@ const Response = (props) => {
   return (
     <>
       <div 
-        className={`bg-slate-900 w-5/12 text-white py-2 px-3 rounded-lg ${props.type === 'query' ? 'ml-auto text-left' : 'mr-auto text-left'}`}
+        className={`bg-slate-900 w-5/12 mx-2 my-3 text-white py-6 px-8 rounded-lg ${props.type === 'query' ? 'ml-auto text-left' : 'mr-auto text-left'}`}
       >
-        <h1>{props.data} </h1>
+        <h1 className='mb-8'>{props.data} </h1>
       </div>
     </>
   )

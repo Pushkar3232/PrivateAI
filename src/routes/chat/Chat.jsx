@@ -19,7 +19,7 @@ const Chat = () => {
   };
 
   return (
-    <div className="w-full h-full bg-slate-950 p-4">
+    <div className="w-full h-screen overflow-auto bg-slate-950 p-4 ">
       
       {queriesAndResponses.map((item, index) => (
         <div key={index}>
@@ -35,13 +35,13 @@ const Chat = () => {
         </div>
       ))}
 
-      <div className="fixed flex-initial bottom-0 w-4/5 bg-slate-800 p-4 flex items-center rounded-md">
+      <div className="fixed flex-initial bottom-0 mb-2 w-4/5 bg-slate-800 p-4 flex items-center rounded-md">
         <input
           type="text"
           name="query"
           id="query"
           value={data}
-          className="w-full p-2 bg-slate-700 text-white rounded-lg focus:outline-none"
+          className="w-full  p-2 bg-slate-700 text-white rounded-lg focus:outline-none"
           placeholder="Type your message..."
           onChange={(e) => setData(e.target.value)} // Update the data state
         />
@@ -55,6 +55,7 @@ const Chat = () => {
           </svg>
         </button>
       </div>
+      
     </div>
   );
 };
