@@ -9,7 +9,7 @@ const App = () => {
         <SlideData />
       </div>
 
-      <div className="flex-1 w-5/6">
+      <div className="flex-1 w-5/6 h-screen">
         <Chat />
       </div>
     </div>
