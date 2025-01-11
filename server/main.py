@@ -18,7 +18,7 @@ def qa():
 
         print(question)
         
-        # Get the response from the LLM function (e.g., GPT)
+        # Get the response from the LLM function 
         answer = get_response_from_llm(question)
         
         # Prepare the data to send back to React
@@ -32,4 +32,4 @@ def qa():
         return jsonify(data)
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)  # Make sure Flask is running on port 5000
+    app.run(debug=True, port=5000)  
