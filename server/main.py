@@ -25,6 +25,8 @@ def qa():
         data = {
             "response": answer
         }
+
+        print(data)
         
         # Send the response back to React in JSON format
         return jsonify(data)
