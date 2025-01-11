@@ -16,6 +16,7 @@ const Chat = () => {
     
     setData('');
     console.log('User Query:', data); 
+    console.log(queriesAndResponses);
   };
 
   return (
