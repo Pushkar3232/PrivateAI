@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Response from "../../components/Response"; // Assuming you have a Response component for rendering
+import Response from "../../components/Response"; 
 
 const Chat = () => {
   const [query, setQuery] = useState(''); 
@@ -60,6 +60,16 @@ const Chat = () => {
     }
   };
 
+  const handelKeyEnter = (e) =>{
+      if (e.key==='Enter'){
+        handleQuerySubmit(e);
+      }
+  }
+  function autoResize(textarea) {
+    textarea.style.height = 'auto'; // Reset height to auto to shrink if needed
+    textarea.style.height = (textarea.scrollHeight) + 'px'; // Adjust height based on content
+  }
+
   return (
     <div className="w-full h-screen overflow-auto bg-slate-950 p-4">
       {queriesAndResponses.map((item, index) => (
@@ -74,16 +84,19 @@ const Chat = () => {
       ))}
 
       <div className="fixed flex-initial bottom-0 mb-2 w-4/5 bg-slate-800 p-4 flex items-center rounded-md">
-        <input
-          type="text"
+        <textarea
           name="query"
           id="query"
           value={query}
           className="w-full p-2 bg-slate-700 text-white rounded-lg focus:outline-none"
           placeholder="Type your message..."
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handelKeyEnter}
           aria-label="Type your query"
+          rows="1"  // Initially setting to one line
+          style={{ resize: 'none', overflowY: 'auto' }} // Disable resizing and enable vertical scroll
         />
+
         <button
           className="px-4 py-1"
           onClick={handleQuerySubmit}

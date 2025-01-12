@@ -1,14 +1,14 @@
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
-import json  # Import json to parse the chunks if they are JSON strings
+import json  
 from backend.LLM import get_response_from_llm
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)  
 
 @app.route("/", methods=["GET"])
 def hello_world():
-    return "Hello from Flask"  # Just a placeholder, React will handle frontend
+    return "Hello from Flask"  
 
 @app.route("/api/data", methods=["POST"])
 def qa():
