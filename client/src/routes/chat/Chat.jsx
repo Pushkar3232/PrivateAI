@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Response from "../../components/Response";
+import Response from "../../components/Response"; // Assuming you have a Response component for rendering
 
 const Chat = () => {
   const [query, setQuery] = useState(''); 
@@ -15,32 +15,38 @@ const Chat = () => {
     }
 
     setQueriesAndResponses((prev) => [...prev, { query, response: "Loading..." }]);
-
     setLoading(true);
 
     try {
-      
       const response = await fetch('http://127.0.0.1:5000/api/data', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ query }), // Sending the query
+        body: JSON.stringify({ query }),
       });
 
-      const result = await response.json(); // Get the response from the backend
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let result = '';
+      
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        result += decoder.decode(value, { stream: true });
 
-      // Update the response in the state
-      setQueriesAndResponses((prev) =>
-        prev.map((item, index) =>
-          index === prev.length - 1
-            ? { ...item, response: result.response }
-            : item
-        )
-      );
+        // Update the response in real-time
+        setQueriesAndResponses((prev) =>
+          prev.map((item, index) =>
+            index === prev.length - 1
+              ? { ...item, response: result }
+              : item
+          )
+        );
+      }
     } catch (error) {
       console.error("Error fetching response:", error);
-      // Handle errors gracefully
       setQueriesAndResponses((prev) =>
         prev.map((item, index) =>
           index === prev.length - 1
@@ -56,7 +62,6 @@ const Chat = () => {
 
   return (
     <div className="w-full h-screen overflow-auto bg-slate-950 p-4">
-      
       {queriesAndResponses.map((item, index) => (
         <div key={index}>
           <div className="text-white">
@@ -68,7 +73,6 @@ const Chat = () => {
         </div>
       ))}
 
-      
       <div className="fixed flex-initial bottom-0 mb-2 w-4/5 bg-slate-800 p-4 flex items-center rounded-md">
         <input
           type="text"

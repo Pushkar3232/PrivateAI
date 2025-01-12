@@ -32,7 +32,7 @@ const Response = (props) => {
 
   return (
     <div
-      className={`bg-slate-900 w-5/12 mx-2 my-3 text-white py-6 px-8 rounded-lg ${props.type === 'query' ? 'ml-auto text-left' : 'mr-auto text-left'}`}
+      className={`bg-slate-900 w-6/12 mx-2 my-3 mb-14 text-white py-6 px-8 rounded-lg ${props.type === 'query' ? 'ml-auto text-left' : 'mr-auto text-left'}`}
       dangerouslySetInnerHTML={{ __html: convertedContent }} // Use dangerouslySetInnerHTML to inject HTML
     >
     </div>
