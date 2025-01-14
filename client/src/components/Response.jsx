@@ -98,13 +98,13 @@ const Response = (props) => {
             src={AudioIcon}
             alt="Speak"
             onClick={handleSpeak}
-            className="w-6 h-6 cursor-pointer hover:opacity-80"
+            className="w-4 h-4 cursor-pointer hover:opacity-80"
           />
           <img
             src={CopyIcon}
             alt="Copy"
             onClick={handleCopyResponse}
-            className="w-6 h-6 cursor-pointer hover:opacity-80"
+            className="w-4 h-4 cursor-pointer hover:opacity-80"
           />
         </div>
       )}
