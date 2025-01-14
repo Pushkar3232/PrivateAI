@@ -14,16 +14,35 @@ const Chat = () => {
       return;
     }
 
+    // Construct the prompt with the last 3 queries and responses
+    const numberOfPreviousQueries = queriesAndResponses.length;
+
+    // If this is the first query, send only the current query
+    if (numberOfPreviousQueries === 0) {
+      prompt = `user: ${query}`;
+    } else {
+      // For subsequent queries, send the last 3 queries and their responses
+      // If there are fewer than 3 queries, send all of them
+      prompt = queriesAndResponses
+        .slice(Math.max(0, numberOfPreviousQueries - 3)) // Take the last 3 or fewer queries/responses
+        .map(item => `user: ${item.query}\nyou: ${item.response}`)
+        .join('\n');
+      // Add the new query to the prompt
+      prompt += `\nuser: ${query}`;
+    }
+  
+    // Add a new entry for the loading state
     setQueriesAndResponses((prev) => [...prev, { query, response: "Loading..." }]);
     setLoading(true);
 
+    console.log(prompt)
     try {
       const response = await fetch('http://127.0.0.1:5000/api/data', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ prompt }),
       });
 
       const reader = response.body.getReader();
@@ -83,12 +102,12 @@ const Chat = () => {
         </div>
       ))}
 
-      <div className="fixed flex-initial bottom-0 mb-2 w-4/5 bg-slate-800 p-4 flex items-center rounded-md">
+      <div className="fixed flex-initial  bottom-0 mb-2 w-10/12 bg-slate-800 p-4 flex items-center rounded-md  ">
         <textarea
           name="query"
           id="query"
           value={query}
-          className="w-full p-2 bg-slate-700 text-white rounded-lg focus:outline-none"
+          className="w-full p-2 bg-slate-700 text-white rounded-lg focus:outline-none "
           placeholder="Type your message..."
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handelKeyEnter}
@@ -98,7 +117,7 @@ const Chat = () => {
         />
 
         <button
-          className="px-4 py-1"
+          className="px-2 py-1 bg-slate-400 rounded-full ml-3 "
           onClick={handleQuerySubmit}
           disabled={loading} 
           aria-label="Submit your query"

@@ -17,11 +17,15 @@ const convertMarkdownToHTML = (text) => {
   // Convert 1. item to <ol><li>item</li></ol>
   formattedText = formattedText.replace(/^(\d+\..+)$/gm, '<ol><li>$1</li></ol>');
   
-  // Convert code blocks (triple backticks)
-  formattedText = formattedText.replace(/```(.*?)\n([\s\S]+?)```/g, (match, lang, code) => {
-    // lang is the optional language provided (e.g., python, js)
-    return `<pre class="bg-gray-800 text-white p-4 rounded"><code class="language-${lang}">${code}</code></pre>`;
-  });
+  // Convert code blocks (triple backticks) to HTML pre and code tags
+formattedText = formattedText.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+  // lang captures the optional language (e.g., python, js)
+  // code captures the content inside the code block
+  const languageClass = lang ? `language-${lang}` : ""; // Use language class if provided
+  return `<pre class="bg-gray-800 text-white p-4 rounded"><code class="${languageClass}">${code.trim()}</code></pre>`;
+});
+
+  
 
   return formattedText;
 }

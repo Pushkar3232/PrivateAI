@@ -13,7 +13,7 @@ def hello_world():
 @app.route("/api/data", methods=["POST"])
 def qa():
     if request.method == "POST":
-        question = request.json.get("query")
+        question = request.json.get("prompt")
         print(f"Received question: {question}")
         
         # This function should return an iterable that yields chunks of response
@@ -37,7 +37,7 @@ def qa():
 
         # Return a streamed response
         return Response(generate_response(), content_type='text/plain;charset=utf-8')
-
+        
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)
 
