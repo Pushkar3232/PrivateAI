@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 import json  
 from backend.LLM import get_response_from_llm
+# from backend.createImage.image import createImg
 
 app = Flask(__name__)
 CORS(app)  
@@ -16,6 +17,7 @@ def qa():
         question = request.json.get("prompt")
         print(f"Received question: {question}")
         
+            
         # This function should return an iterable that yields chunks of response
         def generate_response():
             response = get_response_from_llm(question)
@@ -35,8 +37,9 @@ def qa():
                     print(f"Error parsing chunk: {e}")
                     yield ""  # Yield empty string in case of error
 
-        # Return a streamed response
+
         return Response(generate_response(), content_type='text/plain;charset=utf-8')
+       
         
 if __name__ == "__main__":
     app.run(debug=False, port=5000)
