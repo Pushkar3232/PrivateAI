@@ -1,6 +1,6 @@
 from diffusers import StableDiffusionPipeline
 
-model_path = "model"  # Local model path
+model_path = "C:/Users/Pushkar/Projects/genimage/model"  # Local model path
  # Attempt to load the model
 pipe = StableDiffusionPipeline.from_pretrained(model_path)
 
