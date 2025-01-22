@@ -1,44 +1,46 @@
-from flask import Flask, jsonify, request, Response
-from flask_cors import CORS
-import json  
+from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse, PlainTextResponse
+from fastapi.middleware.cors import CORSMiddleware
+import json
 from backend.LLM import get_response_from_llm
 
-app = Flask(__name__)
-CORS(app)  
+app = FastAPI()
 
-@app.route("/", methods=["GET"])
-def hello_world():
-    return "Hello from Flask"  
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust origins as needed
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.route("/api/data", methods=["POST"])
-def qa():
-    if request.method == "POST":
-        question = request.json.get("prompt")
-        print(f"Received question: {question}")
-        
-        # This function should return an iterable that yields chunks of response
-        def generate_response():
-            response = get_response_from_llm(question)
-            for chunk in response:
-                # Parse the chunk assuming it's a JSON string
-                try:
-                    # If chunk is a bytes object, decode it first
-                    if isinstance(chunk, bytes):
-                        chunk = chunk.decode("utf-8")
-                    
-                    # Convert the chunk to a dictionary if it is a JSON string
-                    chunk_dict = json.loads(chunk)
-                    
-                    # Yield only the 'response' part of the chunk
-                    yield chunk_dict.get("response", "")  # Default to empty string if 'response' key is missing
-                except Exception as e:
-                    print(f"Error parsing chunk: {e}")
-                    yield ""  # Yield empty string in case of error
+@app.get("/")
+async def hello_world():
+    return PlainTextResponse("Hello from FastAPI")
 
-        # Return a streamed response
-        return Response(generate_response(), content_type='text/plain;charset=utf-8')
-        
+@app.post("/api/data")
+async def qa(request: Request):
+    body = await request.json()
+    question = body.get("prompt")
+    print(f"Received question: {question}")
+
+    # Generator to yield chunks of response
+    def generate_response():
+        response = get_response_from_llm(question)
+        for chunk in response:
+            try:
+                if isinstance(chunk, bytes):
+                    chunk = chunk.decode("utf-8")
+                chunk_dict = json.loads(chunk)
+                yield chunk_dict.get("response", "") + " "  # Yield the response part
+            except Exception as e:
+                print(f"Error parsing chunk: {e}")
+                yield ""
+
+    # Use a low-level response to prevent buffering
+    return StreamingResponse(generate_response(), media_type="text/event-stream")
+
 if __name__ == "__main__":
-    app.run(debug=False, port=5000)
-
-
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=5000)
