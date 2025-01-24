@@ -11,9 +11,9 @@ def createImg(prompt):
         image = pipe(prompt).images[0]
         # Save the image
         image.show()
-        image.save("images/generated_image.png")
+        image.save("generated_image.png")
         
-        return "Successfully"
+        return "Done"
     except Exception as e:
         print(f"Error generating image: {e}")
         # Handle the error accordingly, e.g., return a placeholder image or error message.

@@ -8,34 +8,23 @@ const Chat = () => {
 
   const handleQuerySubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!query.trim()) {
       alert("Please enter a query!");
       return;
     }
-
-    // Construct the prompt with the last 3 queries and responses
-    const numberOfPreviousQueries = queriesAndResponses.length;
-
-    // If this is the first query, send only the current query
-    if (numberOfPreviousQueries === 0) {
-      prompt = `user: ${query}`;
-    } else {
-      // For subsequent queries, send the last 3 queries and their responses
-      // If there are fewer than 3 queries, send all of them
-      prompt = queriesAndResponses
-        .slice(Math.max(0, numberOfPreviousQueries - 3)) // Take the last 3 or fewer queries/responses
-        .map(item => `user: ${item.query}\nyou: ${item.response}`)
-        .join('\n');
-      // Add the new query to the prompt
-      prompt += `\nuser: ${query}`;
-    }
   
-    // Add a new entry for the loading state
+    const numberOfPreviousQueries = queriesAndResponses.length;
+    let prompt = numberOfPreviousQueries === 0
+      ? `user: ${query}`
+      : queriesAndResponses
+          .slice(Math.max(0, numberOfPreviousQueries - 3))
+          .map(item => `user: ${item.query}\nyou: ${item.response}`)
+          .join("\n") + `\nuser: ${query}`;
+  
     setQueriesAndResponses((prev) => [...prev, { query, response: "Loading..." }]);
     setLoading(true);
-
-    console.log(prompt)
+  
     try {
       const response = await fetch('http://127.0.0.1:5000/api/data', {
         method: 'POST',
@@ -44,25 +33,37 @@ const Chat = () => {
         },
         body: JSON.stringify({ prompt }),
       });
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-      let result = '';
-      
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
-        result += decoder.decode(value, { stream: true });
-
-        // Update the response in real-time
+  
+      if (query.includes("@image")) {
+        const blob = await response.blob();
+        const imageUrl = URL.createObjectURL(blob);
+  
         setQueriesAndResponses((prev) =>
           prev.map((item, index) =>
             index === prev.length - 1
-              ? { ...item, response: result }
+              ? { ...item, response: <img src={imageUrl} alt="Generated" /> }
               : item
           )
         );
+      } else {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+        let result = "";
+  
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          result += decoder.decode(value, { stream: true });
+  
+          setQueriesAndResponses((prev) =>
+            prev.map((item, index) =>
+              index === prev.length - 1
+                ? { ...item, response: result }
+                : item
+            )
+          );
+        }
       }
     } catch (error) {
       console.error("Error fetching response:", error);
@@ -75,9 +76,10 @@ const Chat = () => {
       );
     } finally {
       setLoading(false);
-      setQuery(''); 
+      setQuery('');
     }
   };
+  
 
   const handelKeyEnter = (e) =>{
       if (e.key==='Enter'){
