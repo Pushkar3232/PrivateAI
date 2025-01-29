@@ -49,6 +49,7 @@ async def qa(request: Request):
                 for word in words[:-1]:
                     yield word + " "
                 buffer = words[-1]
+                
             except Exception as e:
                 print(f"Error processing chunk: {e}")
                 yield ""

@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Response from "../../components/Response"; 
 
 const Chat = () => {
-  const [query, setQuery] = useState(''); 
-  const [queriesAndResponses, setQueriesAndResponses] = useState([]); 
+  const [query, setQuery] = useState('');
+  const [queriesAndResponses, setQueriesAndResponses] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // Create a reference to the chat container to handle scrolling
+  const chatContainerRef = useRef(null);
 
   const handleQuerySubmit = async (e) => {
     e.preventDefault();
@@ -80,12 +83,19 @@ const Chat = () => {
     }
   };
   
+  const handelKeyEnter = (e) => {
+    if (e.key === 'Enter') {
+      handleQuerySubmit(e);
+    }
+  };
+  
+  // This effect will scroll to the bottom of the chat container whenever the queriesAndResponses array changes
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [queriesAndResponses]); // This will run whenever queriesAndResponses updates
 
-  const handelKeyEnter = (e) =>{
-      if (e.key==='Enter'){
-        handleQuerySubmit(e);
-      }
-  }
   function autoResize(textarea) {
     textarea.style.height = 'auto'; // Reset height to auto to shrink if needed
     textarea.style.height = (textarea.scrollHeight) + 'px'; // Adjust height based on content
@@ -93,35 +103,36 @@ const Chat = () => {
 
   return (
     <div className="w-full h-screen overflow-auto bg-slate-950 p-4">
-      {queriesAndResponses.map((item, index) => (
-        <div key={index}>
-          <div className="text-white">
-            <Response data={item.query} type="query" />
+      <div className="chat-container" ref={chatContainerRef} style={{ maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
+        {queriesAndResponses.map((item, index) => (
+          <div key={index}>
+            <div className="text-white">
+              <Response data={item.query} type="query" />
+            </div>
+            <div className="text-white">
+              <Response data={item.response} type="response" />
+            </div>
           </div>
-          <div className="text-white">
-            <Response data={item.response} type="response" />
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
-      <div className="fixed flex-initial  bottom-0 mb-2 w-10/12 bg-slate-800 p-4 flex items-center rounded-md  ">
+      <div className="fixed flex-initial bottom-0 mb-2 w-10/12 bg-slate-800 p-4 flex items-center rounded-md">
         <textarea
           name="query"
           id="query"
           value={query}
-          className="w-full p-2 bg-slate-700 text-white rounded-lg focus:outline-none "
+          className="w-full p-2 bg-slate-700 text-white rounded-lg focus:outline-none"
           placeholder="Type your message..."
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handelKeyEnter}
           aria-label="Type your query"
-          rows="1"  // Initially setting to one line
-          style={{ resize: 'none', overflowY: 'auto' }} // Disable resizing and enable vertical scroll
+          rows="1"
+          style={{ resize: 'none', overflowY: 'auto' }}
         />
-
         <button
-          className="px-2 py-1 bg-slate-400 rounded-full ml-3 "
+          className="px-2 py-1 bg-slate-400 rounded-full ml-3"
           onClick={handleQuerySubmit}
-          disabled={loading} 
+          disabled={loading}
           aria-label="Submit your query"
         >
           {loading ? (

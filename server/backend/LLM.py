@@ -11,7 +11,7 @@ def get_response_from_llm(prompt):
     conversation_history = []
 
     data = {
-        "model": "llama3",
+        "model": "deepseek-r1:8b",
         "stream" : True,
         "prompt": prompt,
     }
