@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AudioIcon from '../assets/Audio.png'; // Path to the Speak icon
 import CopyIcon from '../assets/copy.png'; // Path to the Copy icon
 
 // Function to convert markdown-like syntax into HTML
 const convertMarkdownToHTML = (text) => {
   let formattedText = text;
+
+  // Remove the <think>...</think> block entirely
+  formattedText = formattedText.replace(/<think>[\s\S]*?<\/think>/g, '');
 
   // Convert `\n` to `<br />` (skip inside code blocks)
   formattedText = formattedText.replace(/\n(?![\s\S]*?```)/g, '<br />');
@@ -47,18 +50,33 @@ const convertMarkdownToHTML = (text) => {
 };
 
 const Response = (props) => {
+  const [showResponse, setShowResponse] = useState(false); // To control whether the response is shown
+  const [finalData, setFinalData] = useState(""); // Holds the final cleaned response
   const convertedContent = convertMarkdownToHTML(props.data);
+
+  useEffect(() => {
+    // Clean the input data and remove <think>...</think> before showing the final response
+    const cleanedData = props.data.replace(/<think>[\s\S]*?<\/think>/g, '');  // Removing the <think> content
+    setFinalData(cleanedData);
+
+    // You can add a delay here if needed to simulate thinking
+    if (cleanedData) {
+      setTimeout(() => {
+        setShowResponse(true); // Show response after "thinking"
+      }, 2000); // You can adjust the delay
+    }
+  }, [props.data]);
 
   // Function to handle the "Copy" button for entire response
   const handleCopyResponse = () => {
-    navigator.clipboard.writeText(props.data).then(() => {
+    navigator.clipboard.writeText(finalData).then(() => {
       alert('Response copied to clipboard!');
     });
   };
 
   // Function to handle the "Speak" button click
   const handleSpeak = () => {
-    const utterance = new SpeechSynthesisUtterance(props.data);
+    const utterance = new SpeechSynthesisUtterance(finalData);
     speechSynthesis.speak(utterance);
   };
 
@@ -71,29 +89,32 @@ const Response = (props) => {
   };
 
   // Add event listener for dynamically added copy buttons
-  React.useEffect(() => {
+  useEffect(() => {
     const copyButtons = document.querySelectorAll('.copy-code-button');
     copyButtons.forEach((button) => {
       button.addEventListener('click', handleCopyCode);
     });
+
     return () => {
       copyButtons.forEach((button) => {
         button.removeEventListener('click', handleCopyCode);
       });
     };
-  }, [props.data]);
+  }, [finalData]);
 
   return (
     <div
-      className={`bg-slate-900 w-6/12 mx-2 my-3 mb-14 text-white py-6 px-8 rounded-lg ${
-        props.type === 'query' ? 'ml-auto text-left' : 'mr-auto text-left'
-      } overflow-auto break-words`}
+      className={`bg-slate-900 w-6/12 mx-2 my-3 mb-14 text-white py-6 px-8 rounded-lg ${props.type === 'query' ? 'ml-auto text-left' : 'mr-auto text-left'} overflow-auto break-words`}
     >
-      {/* Render the converted content */}
-      <div dangerouslySetInnerHTML={{ __html: convertedContent }}></div>
+      {/* Render the converted content only when showResponse is true */}
+      {showResponse ? (
+        <div dangerouslySetInnerHTML={{ __html: convertMarkdownToHTML(finalData) }}></div>
+      ) : (
+        <p>Thinking...</p> // Display "Thinking..." until the response is ready
+      )}
 
       {/* Only show Speak/Copy icons if the type is NOT 'query' */}
-      {props.type !== 'query' && (
+      {props.type !== 'query' && showResponse && (
         <div className="flex justify-end mt-4 space-x-4">
           <img
             src={AudioIcon}
