@@ -6,9 +6,6 @@ import CopyIcon from '../assets/copy.png'; // Path to the Copy icon
 const convertMarkdownToHTML = (text) => {
   let formattedText = text;
 
-  // Remove the <think>...</think> block entirely
-  formattedText = formattedText.replace(/<think>[\s\S]*?<\/think>/g, '');
-
   // Convert `\n` to `<br />` (skip inside code blocks)
   formattedText = formattedText.replace(/\n(?![\s\S]*?```)/g, '<br />');
 
@@ -44,26 +41,44 @@ const convertMarkdownToHTML = (text) => {
       <br />
     `;
   });
-  
 
   return formattedText;
+};
+
+// Thinking Component for the animated dots
+const Thinking = () => {
+  return (
+    <div className="flex items-center space-x-1">
+      <span>Thinking</span>
+      <div className="flex space-x-1">
+        <div className="w-1 h-1 bg-white rounded-full animate-bounce delay-100"></div>
+        <div className="w-1 h-1 bg-white rounded-full animate-bounce delay-200"></div>
+        <div className="w-1 h-1 bg-white rounded-full animate-bounce delay-300"></div>
+      </div>
+    </div>
+  );
 };
 
 const Response = (props) => {
   const [showResponse, setShowResponse] = useState(false); // To control whether the response is shown
   const [finalData, setFinalData] = useState(""); // Holds the final cleaned response
-  const convertedContent = convertMarkdownToHTML(props.data);
+  const [thinkData, setThinkData] = useState(""); // Holds the extracted <think> content
 
   useEffect(() => {
+    // Extract <think> content
+    const thinkContent = props.data.match(/<think>([\s\S]*?)<\/think>/g) || [];
+    const thinkText = thinkContent.map(tag => tag.replace(/<\/?think>/g, '')).join('<br />');
+    setThinkData(convertMarkdownToHTML(thinkText)); // Apply formatting to <think> content
+
     // Clean the input data and remove <think>...</think> before showing the final response
     const cleanedData = props.data.replace(/<think>[\s\S]*?<\/think>/g, '');  // Removing the <think> content
     setFinalData(cleanedData);
 
-    // You can add a delay here if needed to simulate thinking
+    // Simulate a delay for "thinking"
     if (cleanedData) {
       setTimeout(() => {
         setShowResponse(true); // Show response after "thinking"
-      }, 2000); // You can adjust the delay
+      }, 2000); // Adjust the delay as needed
     }
   }, [props.data]);
 
@@ -106,11 +121,19 @@ const Response = (props) => {
     <div
       className={`bg-slate-900 w-6/12 mx-2 my-3 mb-14 text-white py-6 px-8 rounded-lg ${props.type === 'query' ? 'ml-auto text-left' : 'mr-auto text-left'} overflow-auto break-words`}
     >
+      {/* Render the <think> content with formatting */}
+      {thinkData && (
+        <div className="bg-slate-800 p-4 rounded-lg mb-4">
+          <strong>Thinking:</strong>
+          <div dangerouslySetInnerHTML={{ __html: thinkData }}></div>
+        </div>
+      )}
+
       {/* Render the converted content only when showResponse is true */}
       {showResponse ? (
         <div dangerouslySetInnerHTML={{ __html: convertMarkdownToHTML(finalData) }}></div>
       ) : (
-        <p>Thinking...</p> // Display "Thinking..." until the response is ready
+        <Thinking /> // Display the "Thinking..." animation
       )}
 
       {/* Only show Speak/Copy icons if the type is NOT 'query' */}
