@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+requests
+pymongo
+unsloth
+torch
+transformers
+trl
+diffusers
