@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    working_dir: /app/client
+    ports:
+      - "5173:5173"
+    # Volume mapping removed to preserve the image's node_modules
+    # volumes:
+    #   - ./client:/app/client
+    command: npm run dev
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend
+    working_dir: /app/server
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server:/app/server
+    command: python main.py

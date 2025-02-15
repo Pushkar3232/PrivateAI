@@ -2,7 +2,8 @@ import requests
 import json
 
 def get_response_from_llm(prompt):
-    url = "http://localhost:11434/api/generate"
+    url = "http://host.docker.internal:11434/api/generate"
+
 
     headers = {
         'Content-Type': 'application/json',
@@ -11,7 +12,7 @@ def get_response_from_llm(prompt):
     conversation_history = []
 
     data = {
-        "model": "deepseek-r1:8b",
+        "model": "deepseek-r1:1.5b",
         "stream" : True,
         "prompt": prompt,
     }
