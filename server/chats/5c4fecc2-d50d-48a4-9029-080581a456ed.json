@@ -1,0 +1,11 @@
+{
+  "id": "5c4fecc2-d50d-48a4-9029-080581a456ed",
+  "created_at": "2025-04-02T11:55:38.544620",
+  "messages": [
+    {
+      "query": "How are you",
+      "response": "<think>\n\n</think>\n\nHello! I'm DeepSeek-R1, an artificial intelligence assistant created by DeepSeek. For comprehensive details about our models and products, we invite you to consult our official documentation.",
+      "timestamp": "2025-04-02T11:55:44.382766"
+    }
+  ]
+}

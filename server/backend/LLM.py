@@ -2,7 +2,7 @@ import requests
 import json
 
 def get_response_from_llm(prompt):
-    url = "http://host.docker.internal:11434/api/generate"
+    url = "http://localhost:11434/api/generate"
 
 
     headers = {
