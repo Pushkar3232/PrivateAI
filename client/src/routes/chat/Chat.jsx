@@ -100,6 +100,23 @@ const Chat = ({ currentChatId, onChatCreated }) => {
       } : item
     ));
   };
+  const useAutoResizeTextarea = (query) => {
+    const textareaRef = useRef(null);
+  
+    useEffect(() => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        // Reset height to get the correct scrollHeight
+        textarea.style.height = 'auto';
+        // Set new height including scroll height
+        const newHeight = Math.min(textarea.scrollHeight, 200); // Max 200px
+        textarea.style.height = `${newHeight}px`;
+      }
+    }, [query]);
+  
+    return textareaRef;
+  };
+  const textareaRef = useAutoResizeTextarea(query);
 
   return (
     <div className="w-full h-screen overflow-auto bg-slate-950 p-4">
@@ -128,31 +145,53 @@ const Chat = ({ currentChatId, onChatCreated }) => {
       </div>
 
       <form 
-        onSubmit={handleSubmit}
-        className="fixed bottom-0 left-0 right-0 bg-slate-800 p-4 flex items-center"
+  onSubmit={handleSubmit}
+  className="fixed bottom-0 w-10/12   pt-4"
+>
+  <div className="mx-auto max-w-3xl px-4">
+    <div className="relative rounded-xl  border border-slate-700 bg-slate-900 shadow-xl">
+      <textarea
+        ref={textareaRef}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit(e)}
+        disabled={loading}
+        className="w-full resize-none bg-transparent p-4 pr-16 text-slate-200 placeholder-slate-500 focus:outline-none scrollbar-thin"
+        placeholder="Message PrivateAI..."
+        style={{
+          minHeight: '54px',
+          overflowY: 'auto',
+        }}
+      />
+      <button
+        type="submit"
+        disabled={loading}
+        className="absolute right-2 bottom-2 flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50"
       >
-        <textarea
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit(e)}
-          disabled={loading}
-          className="flex-1 p-2 bg-slate-700 text-white rounded-lg focus:outline-none"
-          placeholder="Type your message..."
-          rows="1"
-          style={{ resize: 'none' }}
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="ml-2 p-2 bg-blue-600 rounded-full hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? (
-            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-white"></div>
-          ) : (
-            '➤'
-          )}
-        </button>
-      </form>
+        {loading ? (
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" />
+        ) : (
+          <svg
+            className="h-5 w-5 text-slate-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+            />
+          </svg>
+        )}
+      </button>
+    </div>
+    <div className="py-3 text-center text-xs text-slate-500">
+      AI can make mistakes. Consider checking important information.
+    </div>
+  </div>
+</form>
     </div>
   );
 };
