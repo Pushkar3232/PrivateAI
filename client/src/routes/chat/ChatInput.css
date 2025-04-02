@@ -1,0 +1,108 @@
+/* ChatInput.css */
+.chat-container {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 768px;
+    padding: 1rem;
+    background: linear-gradient(to bottom, rgba(23,23,23,0) 0%, rgba(23,23,23,0.8) 20%, rgba(23,23,23,1) 50%);
+    z-index: 100;
+  }
+  
+  .input-wrapper {
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1.5rem;
+    background: #171717;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+  }
+  
+  .input-wrapper:focus-within {
+    border-color: rgba(255,255,255,0.3);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.05);
+  }
+  
+  .chat-textarea {
+    width: 100%;
+    color: #fff;
+    background: transparent;
+    border: none;
+    padding: 1rem 4rem 1rem 1.5rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    resize: none;
+    overflow-y: auto;
+    min-height: 56px;
+    max-height: 200px;
+  }
+  
+  .chat-textarea::placeholder {
+    color: #71717a;
+    opacity: 1;
+  }
+  
+  .send-button {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    background: #3f3f46;
+    border: none;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .send-button:hover {
+    background: #52525b;
+  }
+  
+  .send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .send-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #fff;
+    transform: translateX(1px);
+  }
+  
+  .loading-spinner {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid transparent;
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Scrollbar Styling */
+  .chat-textarea::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .chat-textarea::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .chat-textarea::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+    border-radius: 3px;
+  }
+  
+  .chat-textarea::-webkit-scrollbar-thumb:hover {
+    background: #52525b;
+  }
