@@ -51,22 +51,26 @@ async def handle_query(request: Request):
     if not prompt or not prompt.strip():
         raise HTTPException(status_code=400, detail="Empty prompt")
 
+    # Get chat history
+    chat_data = get_chat(chat_id) if chat_id else None
+    messages = chat_data.get("messages", []) if chat_data else []
+    
+    # Build conversation context from last 3 messages
+    context = "\n".join([f"User: {msg['query']}\nAI: {msg['response']}" 
+                       for msg in messages[-3:]])
+    
     # Create chat if none exists
-    if not chat_id or not get_chat(chat_id):
+    if not chat_id or not chat_data:
         chat_id = create_chat()
     
-    # Handle image generation
-    if "@image" in prompt:
-        from backend.genimage.image import createImg
-        createImg(prompt)
-        image_path = "generated_image.png"
-        add_message_to_chat(chat_id, prompt, image_path)
-        return FileResponse(image_path, media_type="image/png")
-    
+    # Create final prompt with history
+    full_prompt = f"{context}\nUser: {prompt}\nAI:" if context else prompt
+
     # Text response handling
     def generate():
         full_response = ""
-        for chunk in get_response_from_llm(prompt):
+        # Pass full_prompt to LLM instead of raw prompt
+        for chunk in get_response_from_llm(full_prompt):
             try:
                 if isinstance(chunk, bytes):
                     chunk = chunk.decode("utf-8")
@@ -79,6 +83,7 @@ async def handle_query(request: Request):
         add_message_to_chat(chat_id, prompt, full_response)
 
     return StreamingResponse(generate(), media_type="text/event-stream")
+
 
 if __name__ == "__main__":
     import uvicorn
