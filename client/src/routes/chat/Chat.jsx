@@ -7,25 +7,24 @@ const Chat = ({ currentChatId, onChatCreated }) => {
   const [loading, setLoading] = useState(false);
   const chatContainerRef = useRef(null);
 
-// Change the useEffect for loading messages to:
-useEffect(() => {
-  const loadMessages = async () => {
-    if (!currentChatId) {
-      setMessages([]);
-      return;
-    }
-    try {
-      const response = await fetch(`http://localhost:5000/api/chats/${currentChatId}`);
-      if (!response.ok) throw new Error('Failed to load chat');
-      const data = await response.json();
-      setMessages(data.messages || []); // Add fallback for empty messages
-    } catch (error) {
-      console.error("Error loading chat:", error);
-      setMessages([]);
-    }
-  };
-  loadMessages();
-}, [currentChatId]);
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (!currentChatId) {
+        setMessages([]);
+        return;
+      }
+      try {
+        const response = await fetch(`http://localhost:5000/api/chats/${currentChatId}`);
+        if (!response.ok) throw new Error('Failed to load chat');
+        const data = await response.json();
+        setMessages(data.messages || []); // fallback for empty messages
+      } catch (error) {
+        console.error("Error loading chat:", error);
+        setMessages([]);
+      }
+    };
+    loadMessages();
+  }, [currentChatId]);
 
   // Auto-scroll to bottom
   useEffect(() => {

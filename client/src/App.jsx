@@ -7,7 +7,7 @@ const App = () => {
   const [chatList, setChatList] = useState([])
   const [refreshChats, setRefreshChats] = useState(false)
 
-  // Load initial chat list
+  // Load initial chat list (this is handled in SlideData too, but you can keep this for other purposes)
   useEffect(() => {
     const loadInitialChats = async () => {
       try {
@@ -19,11 +19,11 @@ const App = () => {
       }
     }
     loadInitialChats()
-  }, [refreshChats]) // Add refreshChats as dependency
+  }, [refreshChats]) // trigger re-load when refreshChats changes
 
   const handleNewChatCreated = (chatId) => {
     setCurrentChatId(chatId)
-    setRefreshChats(prev => !prev) // Trigger chat list refresh
+    setRefreshChats(prev => !prev) // toggle refreshChats to force refresh
   }
 
   return (

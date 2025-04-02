@@ -6,7 +6,7 @@ import os
 import uuid
 from datetime import datetime
 from backend.LLM import get_response_from_llm
-from backend.chat_store import get_all_chats
+from backend.chat_store import get_all_chats, create_chat, get_chat, add_message_to_chat
 
 app = FastAPI()
 
@@ -21,47 +21,6 @@ app.add_middleware(
 
 CHATS_DIR = "./chats"
 
-# Database functions
-def ensure_chats_dir():
-    os.makedirs(CHATS_DIR, exist_ok=True)
-
-def create_chat():
-    ensure_chats_dir()
-    chat_id = str(uuid.uuid4())
-    chat_path = os.path.join(CHATS_DIR, f"{chat_id}.json")
-    chat_data = {
-        "id": chat_id,
-        "created_at": datetime.now().isoformat(),
-        "messages": []
-    }
-    with open(chat_path, 'w') as f:
-        json.dump(chat_data, f, indent=2)
-    return chat_id
-
-def get_chat(chat_id: str):
-    chat_path = os.path.join(CHATS_DIR, f"{chat_id}.json")
-    if not os.path.exists(chat_path):
-        return None
-    with open(chat_path, 'r') as f:
-        return json.load(f)
-
-def add_message(chat_id: str, query: str, response: str):
-    chat_path = os.path.join(CHATS_DIR, f"{chat_id}.json")
-    if not os.path.exists(chat_path):
-        return None
-    with open(chat_path, 'r+') as f:
-        chat_data = json.load(f)
-        chat_data['messages'].append({
-            "query": query,
-            "response": response,
-            "timestamp": datetime.now().isoformat()
-        })
-        f.seek(0)
-        json.dump(chat_data, f, indent=2)
-        f.truncate()
-    return True
-
-# API endpoints
 @app.get("/")
 async def root():
     return PlainTextResponse("PrivateAI API")
@@ -77,17 +36,22 @@ async def get_chat_endpoint(chat_id: str):
         raise HTTPException(status_code=404, detail="Chat not found")
     return chat_data
 
+# New endpoint for creating chats
+@app.post("/api/chats")
+async def create_chat_endpoint():
+    chat_id = create_chat()
+    return {"chat_id": chat_id}
+
 @app.post("/api/data")
 async def handle_query(request: Request):
     body = await request.json()
     prompt = body.get("prompt")
     chat_id = body.get("chat_id")
     
-    # Validate prompt
     if not prompt or not prompt.strip():
         raise HTTPException(status_code=400, detail="Empty prompt")
 
-    # Create chat only when first message is sent
+    # Create chat if none exists
     if not chat_id or not get_chat(chat_id):
         chat_id = create_chat()
     
@@ -96,7 +60,7 @@ async def handle_query(request: Request):
         from backend.genimage.image import createImg
         createImg(prompt)
         image_path = "generated_image.png"
-        add_message(chat_id, prompt, image_path)
+        add_message_to_chat(chat_id, prompt, image_path)
         return FileResponse(image_path, media_type="image/png")
     
     # Text response handling
@@ -112,9 +76,7 @@ async def handle_query(request: Request):
                 yield text
             except Exception as e:
                 print(f"Error processing chunk: {e}")
-        
-        # Save complete response to DB
-        add_message(chat_id, prompt, full_response)
+        add_message_to_chat(chat_id, prompt, full_response)
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 

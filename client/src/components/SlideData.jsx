@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-const SlideData = ({ onSelectChat, currentChatId }) => {
+const SlideData = ({ onSelectChat, currentChatId, refreshChats }) => {
   const [chats, setChats] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -19,7 +19,7 @@ const SlideData = ({ onSelectChat, currentChatId }) => {
     }
     
     loadChats()
-  }, [])
+  }, [refreshChats]) // Re-run when refreshChats changes
 
   return (
     <div className="w-full h-screen overflow-hidden bg-slate-900 text-white flex flex-col">
@@ -45,7 +45,7 @@ const SlideData = ({ onSelectChat, currentChatId }) => {
               key={chat.id}
               onClick={() => onSelectChat(chat.id)}
               className={`cursor-pointer p-2 mx-2 my-1 rounded-lg transition-colors ${
-                currentChatId === chat.id ? 'bg-slate-800' : 'hover:bg-slate-800'
+                currentChatId === chat.id ? 'bg-slate-800' : 'hover:bg-slate-900'
               }`}
             >
               <div className="text-sm font-medium truncate">
