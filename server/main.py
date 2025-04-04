@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime
 from backend.LLM import get_response_from_llm
 from backend.chat_store import get_all_chats, create_chat, get_chat, add_message_to_chat
+from backend.genimage.image import createImg
 
 app = FastAPI()
 
@@ -59,7 +60,15 @@ async def handle_query(request: Request):
     context = "\n".join([f"User: {msg['query']}\nAI: {msg['response']}" 
                        for msg in messages[-3:]])
     
-    # Create chat if none exists
+    # if "@image" in prompt:
+
+
+    # # Call createImg() and serve the generated image
+    #     createImg(prompt)  # Generate the image
+    #     image_path = "C:/Users/Pushkar/Projects/PrivateAI/server/generated_image.png"
+    #     return FileResponse(image_path, media_type="image/png")
+    
+    # Create chat if 2none exists
     if not chat_id or not chat_data:
         chat_id = create_chat()
     

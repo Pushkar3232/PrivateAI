@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Response from "../../components/Response";
+import { FiArrowDown, FiSend, FiPlus } from 'react-icons/fi';
 
 const Chat = ({ currentChatId, onChatCreated }) => {
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const chatContainerRef = useRef(null);
+  const isAtBottomRef = useRef(true);
 
+  // Load messages when chat ID changes
   useEffect(() => {
     const loadMessages = async () => {
       if (!currentChatId) {
@@ -17,7 +21,7 @@ const Chat = ({ currentChatId, onChatCreated }) => {
         const response = await fetch(`http://localhost:5000/api/chats/${currentChatId}`);
         if (!response.ok) throw new Error('Failed to load chat');
         const data = await response.json();
-        setMessages(data.messages || []); // fallback for empty messages
+        setMessages(data.messages || []);
       } catch (error) {
         console.error("Error loading chat:", error);
         setMessages([]);
@@ -26,12 +30,29 @@ const Chat = ({ currentChatId, onChatCreated }) => {
     loadMessages();
   }, [currentChatId]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll logic
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    const container = chatContainerRef.current;
+    if (container && isAtBottomRef.current) {
+      container.scrollTop = container.scrollHeight;
     }
   }, [messages]);
+
+  // Scroll event handler
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const delta = container.scrollHeight - container.scrollTop - container.clientHeight;
+      const isNearBottom = delta <= 100;
+      isAtBottomRef.current = isNearBottom;
+      setShowScrollButton(!isNearBottom);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,7 +61,6 @@ const Chat = ({ currentChatId, onChatCreated }) => {
     let chatId = currentChatId;
     let newChat = false;
     
-    // Create new chat if none exists
     if (!chatId) {
       const response = await fetch('http://localhost:5000/api/chats', { method: 'POST' });
       const data = await response.json();
@@ -48,8 +68,8 @@ const Chat = ({ currentChatId, onChatCreated }) => {
       newChat = true;
     }
 
-    // Update UI immediately
     setMessages(prev => [...prev, { query, response: "Loading..." }]);
+    isAtBottomRef.current = true;
     setLoading(true);
     setQuery('');
 
@@ -92,6 +112,18 @@ const Chat = ({ currentChatId, onChatCreated }) => {
     }
   };
 
+  const scrollToBottom = () => {
+    const container = chatContainerRef.current;
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      });
+      isAtBottomRef.current = true;
+      setShowScrollButton(false);
+    }
+  };
+
   const updateLastMessage = (content) => {
     setMessages(prev => prev.map((item, index) => 
       index === prev.length - 1 ? { 
@@ -100,16 +132,15 @@ const Chat = ({ currentChatId, onChatCreated }) => {
       } : item
     ));
   };
+
   const useAutoResizeTextarea = (query) => {
     const textareaRef = useRef(null);
   
     useEffect(() => {
       const textarea = textareaRef.current;
       if (textarea) {
-        // Reset height to get the correct scrollHeight
         textarea.style.height = 'auto';
-        // Set new height including scroll height
-        const newHeight = Math.min(textarea.scrollHeight, 200); // Max 200px
+        const newHeight = Math.min(textarea.scrollHeight, 200);
         textarea.style.height = `${newHeight}px`;
       }
     }, [query]);
@@ -119,79 +150,132 @@ const Chat = ({ currentChatId, onChatCreated }) => {
   const textareaRef = useAutoResizeTextarea(query);
 
   return (
-    <div className="w-full h-screen overflow-auto bg-slate-950 p-4">
+    <div className="flex-1 flex flex-col relative bg-slate-900/60 backdrop-blur-lg border-l border-slate-700/30 overflow-hidden">
+      {/* Chat Messages Container */}
       <div 
         ref={chatContainerRef}
-        className="chat-container"
-        style={{ 
-          maxHeight: 'calc(100vh - 100px)', 
-          overflowY: 'auto',
-          paddingBottom: '80px'
+        className="flex-1 overflow-y-auto custom-scrollbar pt-8 pb-24 px-6"
+        style={{
+          background: `
+            linear-gradient(
+              180deg,
+              rgba(15, 23, 42, 0.95) 0%,
+              rgba(15, 23, 42, 0.98) 100%
+            )
+          `,
         }}
       >
-        {messages.map((message, index) => (
-          <div key={index} className="mb-4">
-            <div className="text-white mb-2">
-              <Response data={message.query} type="query" />
+        {/* Empty State */}
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full space-y-8 max-w-3xl mx-auto">
+            <div className="text-center space-y-4">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                PrivateAI
+              </h1>
+              <p className="text-slate-300 text-lg font-light">
+                Your intelligent assistant powered by AI
+              </p>
             </div>
-            <div className="text-white">
-              <Response 
-                data={message.response} 
-                type={typeof message.response === 'string' ? "text" : "image"} 
-              />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+              {[
+                "Explain quantum computing in simple terms",
+                "Suggest fun weekend activities",
+                "How do I make a great pizza dough?",
+                "Write a poem about artificial intelligence"
+              ].map((prompt, index) => (
+                <button
+                  key={index}
+                  onClick={() => setQuery(prompt)}
+                  className="group relative p-4 text-left rounded-xl border border-slate-700/50 hover:border-purple-400/30 bg-slate-900/50 hover:bg-slate-800/30 transition-all duration-300 backdrop-blur-sm"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+                  <p className="text-slate-300 text-sm font-medium">{prompt}</p>
+                  <span className="text-xs text-purple-400/70 mt-2 block">
+                    <FiPlus className="inline mr-1" />
+                    Quick prompt
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
-        ))}
+        )}
+
+        {/* Messages List */}
+        <div className="max-w-4xl mx-auto space-y-8">
+          {messages.map((message, index) => (
+            <div key={index} className="group relative">
+              <div className={`${message.query ? 'pl-12' : 'pr-12'}`}>
+                {message.query && (
+                  <div className="mb-8">
+                    <div className="inline-block bg-slate-800/60 backdrop-blur-sm rounded-2xl px-6 py-4 border border-slate-700/30 shadow-xl">
+                      <Response data={message.query} type="query" />
+                    </div>
+                  </div>
+                )}
+                {message.response && (
+                  <div className="relative">
+                    <div className="absolute -left-10 top-3 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white shadow-lg">
+                      <span className="text-xs font-bold">AI</span>
+                    </div>
+                    <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl px-6 py-4 border border-slate-700/30 shadow-xl">
+                      <Response 
+                        data={message.response} 
+                        type={typeof message.response === 'string' ? "text" : "image"} 
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <form 
-  onSubmit={handleSubmit}
-  className="fixed bottom-0 w-10/12   pt-4"
->
-  <div className="mx-auto max-w-3xl px-4">
-    <div className="relative rounded-xl  border border-slate-700 bg-slate-900 shadow-xl">
-      <textarea
-        ref={textareaRef}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit(e)}
-        disabled={loading}
-        className="w-full resize-none bg-transparent p-4 pr-16 text-slate-200 placeholder-slate-500 focus:outline-none scrollbar-thin"
-        placeholder="Message PrivateAI..."
-        style={{
-          minHeight: '54px',
-          overflowY: 'auto',
-        }}
-      />
-      <button
-        type="submit"
-        disabled={loading}
-        className="absolute right-2 bottom-2 flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50"
-      >
-        {loading ? (
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" />
-        ) : (
-          <svg
-            className="h-5 w-5 text-slate-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+      {/* Input Container */}
+      <div className="sticky bottom-0 bg-transparent pt-12 pb-8 px-6">
+        <form 
+          onSubmit={handleSubmit}
+          className="max-w-4xl mx-auto relative rounded-xl border border-slate-700/50 bg-slate-900/60 backdrop-blur-lg shadow-2xl"
+        >
+          <textarea
+            ref={textareaRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit(e)}
+            disabled={loading}
+            className="w-full resize-none bg-transparent p-4 pr-16 text-slate-200 placeholder-slate-500 focus:outline-none text-base scrollbar-thin"
+            placeholder="Message PrivateAI..."
+            style={{
+              minHeight: '54px',
+              overflowY: 'auto',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="absolute right-3 bottom-3 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 transition-all shadow-lg"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-            />
-          </svg>
-        )}
-      </button>
-    </div>
-    <div className="py-3 text-center text-xs text-slate-500">
-      AI can make mistakes. Consider checking important information.
-    </div>
-  </div>
-</form>
+            {loading ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/50 border-t-transparent" />
+            ) : (
+              <FiSend className="h-5 w-5 text-white" />
+            )}
+          </button>
+        </form>
+        <p className="text-center text-xs text-slate-500/80 mt-4">
+          PrivateAI can make mistakes. Verify important information.
+        </p>
+      </div>
+
+      {showScrollButton && (
+        <button
+          onClick={scrollToBottom}
+          className="fixed bottom-24 right-8 p-3 bg-slate-800/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-slate-700/50 transition-colors border border-slate-700/30 hover:border-purple-400/30 group"
+        >
+          <FiArrowDown className="w-5 h-5 text-slate-300 group-hover:text-purple-400 transition-colors" />
+        </button>
+      )}
     </div>
   );
 };

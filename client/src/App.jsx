@@ -1,3 +1,4 @@
+// App.jsx - Updated with better layout structure
 import React, { useState, useEffect } from 'react'
 import SlideData from './components/SlideData'
 import Chat from './routes/chat/Chat'
@@ -7,7 +8,6 @@ const App = () => {
   const [chatList, setChatList] = useState([])
   const [refreshChats, setRefreshChats] = useState(false)
 
-  // Load initial chat list (this is handled in SlideData too, but you can keep this for other purposes)
   useEffect(() => {
     const loadInitialChats = async () => {
       try {
@@ -19,23 +19,26 @@ const App = () => {
       }
     }
     loadInitialChats()
-  }, [refreshChats]) // trigger re-load when refreshChats changes
+  }, [refreshChats])
 
   const handleNewChatCreated = (chatId) => {
     setCurrentChatId(chatId)
-    setRefreshChats(prev => !prev) // toggle refreshChats to force refresh
+    setRefreshChats(prev => !prev)
   }
 
   return (
-    <div className="flex h-full">
-      <div className="w-1/6 flex">
+    <div className="flex h-screen bg-gradient-to-br from-slate-900 to-slate-950 overflow-hidden">
+      {/* Sidebar with fixed position */}
+      <div className="w-72 flex-shrink-0 h-screen sticky top-0 border-r border-slate-700/50">
         <SlideData 
           onSelectChat={setCurrentChatId}
           currentChatId={currentChatId}
           refreshChats={refreshChats}
         />
       </div>
-      <div className="flex-1 w-full h-full">
+
+      {/* Main chat area with independent scroll */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <Chat 
           currentChatId={currentChatId}
           onChatCreated={handleNewChatCreated}
