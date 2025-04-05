@@ -233,7 +233,7 @@ const Chat = ({ currentChatId, onChatCreated }) => {
       </div>
 
       {/* Input Container */}
-      <div className="sticky bottom-0 bg-transparent pt-12 pb-8 px-6">
+      <div className="sticky bottom-0 bg-slate-900  pb-8 px-6">
         <form 
           onSubmit={handleSubmit}
           className="max-w-4xl mx-auto relative rounded-xl border border-slate-700/50 bg-slate-900/60 backdrop-blur-lg shadow-2xl"

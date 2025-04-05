@@ -9,41 +9,60 @@ import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-json';
 
 const convertMarkdownToHTML = (text) => {
-  let formattedText = text;
+  // Split text into code‐blocks (complete or incomplete) and non‐code segments
+  const segments = text.split(/(```[\s\S]*?(?:```|$))/g);
+  let formattedText = '';
 
-  // Convert headers
-  formattedText = formattedText.replace(/^### (.*)$/gm, '<h3 class="text-xl font-semibold mb-3">$1</h3>');
-  formattedText = formattedText.replace(/^## (.*)$/gm, '<h2 class="text-2xl font-bold mb-4">$1</h2>');
-  formattedText = formattedText.replace(/^# (.*)$/gm, '<h1 class="text-3xl font-bold mb-6">$1</h1>');
+  segments.forEach((segment) => {
+    if (segment.startsWith('```')) {
+      // Match optional language and everything until closing ``` or end of string
+      const codeMatch = segment.match(/```(\w+)?\n([\s\S]*?)(?:```|$)/);
+      if (codeMatch) {
+        const lang = codeMatch[1] || '';
+        const code = codeMatch[2];
+        const languageClass = lang ? `language-${lang}` : '';
 
-  // Convert bold and italic
-  formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>');
-  formattedText = formattedText.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+        const formattedCode = code
+          .split('\n')
+          .map(line => line.trimEnd())
+          .join('\n')
+          .trim();
 
-  // Convert lists
-  formattedText = formattedText.replace(/^\* (.+)$/gm, '<ul class="list-disc pl-6 my-3"><li>$1</li></ul>');
-  formattedText = formattedText.replace(/^\d+\. (.+)$/gm, '<ol class="list-decimal pl-6 my-3"><li>$1</li></ol>');
+        const highlightedCode = Prism.highlight(
+          formattedCode,
+          Prism.languages[lang] || Prism.languages.markup,
+          lang
+        );
 
-  // Convert code blocks
-  formattedText = formattedText.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-    const languageClass = lang ? `language-${lang}` : '';
-    const highlightedCode = Prism.highlight(
-      code.trim(),
-      Prism.languages[lang] || Prism.languages.markup,
-      lang
-    );
-    return `
-      <div class="relative my-4 group">
-        <pre class="!bg-slate-800/50 !rounded-xl p-4 !text-sm border border-slate-700/50 backdrop-blur-sm overflow-auto"><code class="${languageClass}">${highlightedCode}</code></pre>
-        <button class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-slate-700/50 hover:bg-purple-500/20 border border-slate-700/50">
-          <FiCopy class="w-4 h-4 text-slate-300" />
-        </button>
-      </div>
-    `;
+        formattedText += `
+          <div class="relative my-4 group">
+            <pre class="!bg-slate-800/50 !rounded-xl p-4 !text-sm border border-slate-700/50 backdrop-blur-sm overflow-auto whitespace-pre font-mono">
+              <code class="${languageClass}">${highlightedCode}</code>
+            </pre>
+            <button class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-slate-700/50 hover:bg-purple-500/20 border border-slate-700/50">
+              <FiCopy class="w-4 h-4 text-slate-300" />
+            </button>
+          </div>
+        `;
+      } else {
+        // Handle malformed/incomplete code‐block as plain text
+        formattedText += segment;
+      }
+    } else {
+      // Non-code segment: headers, formatting, lists, line breaks
+      let processedSegment = segment
+        .replace(/^### (.*)$/gm, '<h3 class="text-xl font-semibold mb-3">$1</h3>')
+        .replace(/^## (.*)$/gm, '<h2 class="text-2xl font-bold mb-4">$1</h2>')
+        .replace(/^# (.*)$/gm, '<h1 class="text-3xl font-bold mb-6">$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+        .replace(/^\* (.+)$/gm, '<ul class="list-disc pl-6 my-3"><li>$1</li></ul>')
+        .replace(/^\d+\. (.+)$/gm, '<ol class="list-decimal pl-6 my-3"><li>$1</li></ol>')
+        .replace(/\n/g, '<br />');
+
+      formattedText += processedSegment;
+    }
   });
-
-  // Convert line breaks (except in code blocks)
-  formattedText = formattedText.replace(/\n(?![\s\S]*?```)/g, '<br />');
 
   return formattedText;
 };
@@ -55,23 +74,31 @@ const Response = ({ data, type }) => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const thinkContent = data.match(/<think>([\s\S]*?)<\/think>/g) || [];
-    const thinkText = thinkContent.map(tag => tag.replace(/<\/?think>/g, '')).join('<br />');
-    setThinkData(convertMarkdownToHTML(thinkText));
+    let thinkContent = '';
+    let cleanedData = data;
 
-    const cleanedData = data.replace(/<think>[\s\S]*?<\/think>/g, '');
-    setFinalData(cleanedData);
-
-    if (cleanedData) {
-      setTimeout(() => setShowResponse(true), 1000);
+    // Extract <think>…</think> blocks
+    const thinkStart = data.indexOf('<think>');
+    if (thinkStart !== -1) {
+      const thinkEnd = data.indexOf('</think>');
+      thinkContent = thinkEnd !== -1
+        ? data.slice(thinkStart + 7, thinkEnd)
+        : data.slice(thinkStart + 7);
+      cleanedData = thinkEnd !== -1
+        ? data.slice(0, thinkStart) + data.slice(thinkEnd + 8)
+        : data.slice(0, thinkStart);
     }
+
+    setThinkData(convertMarkdownToHTML(thinkContent));
+    setFinalData(cleanedData);
+    setShowResponse(Boolean(cleanedData));
   }, [data]);
 
   useEffect(() => {
     if (showResponse) {
       Prism.highlightAll();
     }
-  }, [showResponse]);
+  }, [showResponse, finalData]);
 
   const handleCopy = async (text) => {
     await navigator.clipboard.writeText(text);
@@ -94,34 +121,36 @@ const Response = ({ data, type }) => {
         </div>
       ) : (
         <>
-          {thinkData && (
+          {(thinkData || data.includes('<think>')) && (
             <div className="mb-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
               <div className="text-sm text-purple-400/80 font-medium mb-2 flex items-center space-x-2">
                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
                 <span>Thinking Process</span>
               </div>
-              <div 
+              <div
                 className="text-slate-300/80 text-sm leading-relaxed prose prose-invert"
-                dangerouslySetInnerHTML={{ __html: thinkData }}
+                dangerouslySetInnerHTML={{ __html: thinkData || 'Analyzing request...' }}
               />
             </div>
           )}
 
           <div className="prose prose-invert max-w-none">
             {showResponse ? (
-              <div 
+              <div
                 className="text-slate-200 leading-relaxed tracking-wide"
                 dangerouslySetInnerHTML={{ __html: convertMarkdownToHTML(finalData) }}
               />
             ) : (
-              <div className="flex items-center space-x-3 text-slate-400">
-                <div className="flex space-x-1.5">
-                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-100" />
-                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-200" />
+              !data.includes('<think>') && (
+                <div className="flex items-center space-x-3 text-slate-400">
+                  <div className="flex space-x-1.5">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-100" />
+                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-200" />
+                  </div>
+                  <span className="text-sm font-medium">Analyzing request...</span>
                 </div>
-                <span className="text-sm font-medium">Analyzing request...</span>
-              </div>
+              )
             )}
           </div>
 
