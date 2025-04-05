@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiCopy, FiVolume2, FiCheck } from 'react-icons/fi';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism-tomorrow.css';
@@ -7,62 +7,99 @@ import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-json';
-import 'prismjs/components/prism-markup'; // for HTML
+import 'prismjs/components/prism-markup';
 
+const CodeBlock = ({ code, language, onCopy }) => {
+  const [copied, setCopied] = useState(false);
+  const codeRef = React.useRef(null);
 
-const convertMarkdownToHTML = (text) => {
-  const segments = text.split(/(```[\s\S]*?(?:```|$))/g);
-  let formattedText = '';
-
-  segments.forEach((segment) => {
-    if (segment.startsWith('```')) {
-      const codeMatch = segment.match(/```(\w+)?\n([\s\S]*?)(?:```|$)/);
-      if (codeMatch) {
-        const lang = codeMatch[1] || '';
-        const code = codeMatch[2];
-        const languageClass = lang ? `language-${lang}` : '';
-
-        const formattedCode = code
-          .split('\n')
-          .map(line => line.trimEnd())
-          .join('\n')
-          .trim();
-
-        const highlightedCode = Prism.highlight(
-          formattedCode,
-          Prism.languages[lang] || Prism.languages.markup,
-          lang
-        );
-
-        formattedText += `
-          <div class="relative my-4 group">
-            <pre class="!bg-slate-800/50 !rounded-xl p-4 !text-sm border border-slate-700/50 backdrop-blur-sm overflow-auto whitespace-pre font-mono">
-              <code class="${languageClass}">${highlightedCode}</code>
-            </pre>
-            <button class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-slate-700/50 hover:bg-purple-500/20 border border-slate-700/50">
-              <FiCopy class="w-4 h-4 text-slate-300" />
-            </button>
-          </div>
-        `;
-      } else {
-        formattedText += segment;
-      }
-    } else {
-      let processedSegment = segment
-        .replace(/^### (.*)$/gm, '<h3 class="text-xl font-semibold mb-3">$1</h3>')
-        .replace(/^## (.*)$/gm, '<h2 class="text-2xl font-bold mb-4">$1</h2>')
-        .replace(/^# (.*)$/gm, '<h1 class="text-3xl font-bold mb-6">$1</h1>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-        .replace(/^\* (.+)$/gm, '<ul class="list-disc pl-6 my-3"><li>$1</li></ul>')
-        .replace(/^\d+\. (.+)$/gm, '<ol class="list-decimal pl-6 my-3"><li>$1</li></ol>')
-        .replace(/\n/g, '<br />');
-
-      formattedText += processedSegment;
+  useEffect(() => {
+    if (codeRef.current) {
+      Prism.highlightElement(codeRef.current);
     }
-  });
+  }, [code, language]);
 
-  return formattedText;
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    onCopy?.();
+  }, [code, onCopy]);
+
+  const handlePreview = useCallback(() => {
+    if (language === 'html') {
+      const previewWindow = window.open();
+      previewWindow.document.write(code);
+      previewWindow.document.close();
+    }
+  }, [code, language]);
+
+  return (
+    <div className="relative my-4 group">
+      <pre className="!bg-slate-800/50 !rounded-xl p-4 !text-sm border border-slate-700/50 backdrop-blur-sm overflow-auto whitespace-pre font-mono">
+        <code ref={codeRef} className={`language-${language}`}>
+          {code}
+        </code>
+      </pre>
+      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        {language === 'html' && (
+          <button
+            onClick={handlePreview}
+            className="px-2 py-1 text-xs font-medium rounded-lg bg-slate-700/50 hover:bg-green-500/20 border border-slate-700/50 transition-colors text-green-300"
+            aria-label="Preview HTML"
+          >
+            Preview
+          </button>
+        )}
+        <button
+          onClick={handleCopy}
+          className="p-1.5 rounded-lg bg-slate-700/50 hover:bg-purple-500/20 border border-slate-700/50 transition-colors"
+          aria-label="Copy code"
+        >
+          {copied ? (
+            <FiCheck className="w-4 h-4 text-green-400" />
+          ) : (
+            <FiCopy className="w-4 h-4 text-slate-300" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const MarkdownRenderer = ({ content }) => {
+  const renderContent = useCallback((text) => {
+    const segments = text.split(/(```[\s\S]*?(?:```|$))/g);
+    return segments.map((segment, index) => {
+      if (segment.startsWith('```')) {
+        const codeMatch = segment.match(/```(\w+)?\n([\s\S]*?)(?:```|$)/);
+        if (codeMatch) {
+          const lang = codeMatch[1] || '';
+          const code = codeMatch[2].trim();
+          return <CodeBlock key={`code-${index}`} code={code} language={lang} />;
+        }
+      }
+      return (
+        <div
+          key={`text-${index}`}
+          className="text-slate-200 leading-relaxed tracking-wide"
+          dangerouslySetInnerHTML={{
+            __html: segment
+              .replace(/^### (.*)$/gm, '<h3 class="text-xl font-semibold mb-3">$1</h3>')
+              .replace(/^## (.*)$/gm, '<h2 class="text-2xl font-bold mb-4">$1</h2>')
+              .replace(/^# (.*)$/gm, '<h1 class="text-3xl font-bold mb-6">$1</h1>')
+              .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+              .replace(/^\* (.+)$/gm, '<ul class="list-disc pl-6 my-3"><li>$1</li></ul>')
+              .replace(/^\d+\. (.+)$/gm, '<ol class="list-decimal pl-6 my-3"><li>$1</li></ol>')
+              .replace(/\n/g, '<br />')
+          }}
+        />
+      );
+    });
+  }, []);
+
+  return <div className="prose prose-invert max-w-none">{renderContent(content)}</div>;
 };
 
 const Response = ({ data, type }) => {
@@ -71,7 +108,6 @@ const Response = ({ data, type }) => {
   const [thinkData, setThinkData] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // 1️⃣ Extract <think> blocks and set finalData
   useEffect(() => {
     let thinkContent = '';
     let cleanedData = data;
@@ -87,59 +123,21 @@ const Response = ({ data, type }) => {
         : data.slice(0, thinkStart);
     }
 
-    setThinkData(convertMarkdownToHTML(thinkContent));
+    setThinkData(thinkContent);
     setFinalData(cleanedData);
     setShowResponse(Boolean(cleanedData));
   }, [data]);
 
-  // 2️⃣ Highlight with Prism
-  useEffect(() => {
-    if (showResponse) {
-      Prism.highlightAll();
-    }
-  }, [showResponse, finalData]);
-
-  // 3️⃣ Inject “Preview” buttons for HTML blocks
-  useEffect(() => {
-    if (!showResponse) return;
-
-    document.querySelectorAll('pre code.language-html').forEach(codeBlock => {
-      const wrapper = codeBlock.parentElement;
-      if (wrapper.querySelector('.preview-btn')) return;
-
-      const btn = document.createElement('button');
-      btn.textContent = 'Preview';
-      btn.className = `
-        preview-btn
-        absolute top-3 left-3
-        bg-green-600/30 hover:bg-green-600/50
-        text-xs text-white font-medium
-        px-2 py-1 rounded
-        transition
-      `;
-      btn.onclick = () => {
-        const html = codeBlock.textContent;
-        const previewWindow = window.open();
-        previewWindow.document.open();
-        previewWindow.document.write(html);
-        previewWindow.document.close();
-      };
-
-      wrapper.style.position = 'relative';
-      wrapper.appendChild(btn);
-    });
-  }, [showResponse, finalData]);
-
-  const handleCopy = async (text) => {
+  const handleCopy = useCallback(async (text) => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, []);
 
-  const handleSpeak = () => {
+  const handleSpeak = useCallback(() => {
     const utterance = new SpeechSynthesisUtterance(finalData);
     speechSynthesis.speak(utterance);
-  };
+  }, [finalData]);
 
   return (
     <div className={`relative ${type === 'query' ? 'text-right' : 'text-left'}`}>
@@ -157,19 +155,13 @@ const Response = ({ data, type }) => {
                 <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
                 <span>Thinking Process</span>
               </div>
-              <div
-                className="text-slate-300/80 text-sm leading-relaxed prose prose-invert"
-                dangerouslySetInnerHTML={{ __html: thinkData || 'Analyzing request...' }}
-              />
+              <MarkdownRenderer content={thinkData || 'Analyzing request...'} />
             </div>
           )}
 
           <div className="prose prose-invert max-w-none">
             {showResponse ? (
-              <div
-                className="text-slate-200 leading-relaxed tracking-wide"
-                dangerouslySetInnerHTML={{ __html: convertMarkdownToHTML(finalData) }}
-              />
+              <MarkdownRenderer content={finalData} />
             ) : (
               !data.includes('<think>') && (
                 <div className="flex items-center space-x-3 text-slate-400">
@@ -195,7 +187,7 @@ const Response = ({ data, type }) => {
               </button>
               <button
                 onClick={() => handleCopy(finalData)}
-                className="p-2 rounded-full bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 hover:bg-purple-500/20 transition-colors relative"
+                className="p-2 rounded-full bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 hover:bg-purple-500/20 transition-colors"
                 aria-label="Copy text"
               >
                 {copied ? (
