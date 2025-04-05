@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import StreamingResponse, PlainTextResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import json
+import re
 import os
 import uuid
 from datetime import datetime
@@ -74,6 +75,8 @@ async def handle_query(request: Request):
     
     # Create final prompt with history
     full_prompt = f"{context}\nUser: {prompt}\nAI:" if context else prompt
+    pattern = re.compile(r"<Think>.*?</Think>", re.DOTALL)
+    full_prompt = re.sub(pattern, "", full_prompt)
 
     # Text response handling
     def generate():
