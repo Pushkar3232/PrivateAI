@@ -49,6 +49,7 @@ async def handle_query(request: Request):
     body = await request.json()
     prompt = body.get("prompt")
     chat_id = body.get("chat_id")
+    model = body.get("model", "deepseek-r1:1.5b")
     
     if not prompt or not prompt.strip():
         raise HTTPException(status_code=400, detail="Empty prompt")
@@ -82,7 +83,7 @@ async def handle_query(request: Request):
     def generate():
         full_response = ""
         # Pass full_prompt to LLM instead of raw prompt
-        for chunk in get_response_from_llm(full_prompt):
+        for chunk in get_response_from_llm(full_prompt, model):
             try:
                 if isinstance(chunk, bytes):
                     chunk = chunk.decode("utf-8")

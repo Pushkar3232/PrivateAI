@@ -1,16 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Response from "../../components/Response";
-import { FiArrowDown, FiSend, FiPlus } from 'react-icons/fi';
+import { FiArrowDown, FiSend, FiPlus, FiZap } from 'react-icons/fi';
 
 const Chat = ({ currentChatId, onChatCreated }) => {
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [modelVersion, setModelVersion] = useState('deepseek-r1:1.5b');
   const chatContainerRef = useRef(null);
   const isAtBottomRef = useRef(true);
 
-  // Load messages when chat ID changes
+  const styles = `
+  @keyframes pro-glow {
+    0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+    100% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
+  }
+`;
+
+  // Model toggle function
+  const toggleModelVersion = () => {
+    setModelVersion(prev => prev === 'deepseek-r1:1.5b' 
+      ? 'deepseek-r1' 
+      : 'deepseek-r1:1.5b');
+  };
+
+  // Load messages effect
   useEffect(() => {
     const loadMessages = async () => {
       if (!currentChatId) {
@@ -30,7 +45,7 @@ const Chat = ({ currentChatId, onChatCreated }) => {
     loadMessages();
   }, [currentChatId]);
 
-  // Auto-scroll logic
+  // Auto-scroll effect
   useEffect(() => {
     const container = chatContainerRef.current;
     if (container && isAtBottomRef.current) {
@@ -38,7 +53,7 @@ const Chat = ({ currentChatId, onChatCreated }) => {
     }
   }, [messages]);
 
-  // Scroll event handler
+  // Scroll handler
   useEffect(() => {
     const container = chatContainerRef.current;
     if (!container) return;
@@ -79,7 +94,8 @@ const Chat = ({ currentChatId, onChatCreated }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt: query,
-          chat_id: chatId
+          chat_id: chatId,
+          model: modelVersion
         })
       });
 
@@ -232,42 +248,93 @@ const Chat = ({ currentChatId, onChatCreated }) => {
         </div>
       </div>
 
-      {/* Input Container */}
-      <div className="sticky bottom-0 bg-slate-900  pb-8 px-6">
-        <form 
-          onSubmit={handleSubmit}
-          className="max-w-4xl mx-auto relative rounded-xl border border-slate-700/50 bg-slate-900/60 backdrop-blur-lg shadow-2xl"
+{/* Input Container */}
+<div className="sticky bottom-0 bg-slate-900 pb-8 px-6">
+  <div className="max-w-4xl mx-auto">
+    {/* Textarea Container */}
+    <form 
+      onSubmit={handleSubmit}
+      className="relative rounded-xl border border-slate-700/50 bg-slate-900/60 backdrop-blur-lg shadow-2xl"
+    >
+      <textarea
+        ref={textareaRef}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit(e)}
+        disabled={loading}
+        className="w-full resize-none bg-transparent p-4 pb-14 text-slate-200 placeholder-slate-500 focus:outline-none text-base scrollbar-thin"
+        placeholder="Message PrivateAI..."
+        style={{
+          minHeight: '72px',
+          overflowY: 'auto',
+          paddingLeft: '1.9rem',
+          paddingRight: '1.9rem',
+        }}
+      />
+
+      {/* XPro Button aligned with text */}
+      <div className="absolute left-7 bottom-[18px] z-10">
+        <button
+          type="button"
+          onClick={toggleModelVersion}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 border ${
+            modelVersion === 'deepseek-r1' // Pro model check
+              ? 'bg-purple-500/10 border-purple-400/30 hover:bg-purple-500/20 shadow-lg shadow-purple-500/20'
+              : 'bg-slate-700/20 border-slate-600/30 hover:bg-slate-700/30'
+          } group relative`}
         >
-          <textarea
-            ref={textareaRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit(e)}
-            disabled={loading}
-            className="w-full resize-none bg-transparent p-4 pr-16 text-slate-200 placeholder-slate-500 focus:outline-none text-base scrollbar-thin"
-            placeholder="Message PrivateAI..."
-            style={{
-              minHeight: '54px',
-              overflowY: 'auto',
-            }}
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="absolute right-3 bottom-3 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 transition-all shadow-lg"
-          >
-            {loading ? (
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/50 border-t-transparent" />
-            ) : (
-              <FiSend className="h-5 w-5 text-white" />
-            )}
-          </button>
-        </form>
-        <p className="text-center text-xs text-slate-500/80 mt-4">
-          PrivateAI can make mistakes. Verify important information.
-        </p>
+          {/* Glow effect for PRO state */}
+          {modelVersion === 'deepseek-r1' && (
+            <div className="absolute inset-0 rounded-xl animate-pro-glow" />
+          )}
+          
+          <FiZap className={`w-4 h-4 ${
+            modelVersion === 'deepseek-r1' // Pro model check
+              ? 'text-purple-400' 
+              : 'text-slate-500'
+          } transition-colors`} />
+          
+          <span className={`text-sm font-medium ${
+            modelVersion === 'deepseek-r1' // Pro model check
+              ? 'bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent'
+              : 'text-slate-400'
+          } transition-all`}>
+            XPro
+          </span>
+          
+          {/* Version badge */}
+          <span className={`text-[10px] font-mono ${
+            modelVersion === 'deepseek-r1' // Pro model check
+              ? 'text-purple-400/70'
+              : 'text-slate-500/70'
+          }`}>
+            {modelVersion === 'deepseek-r1' ? 'v1.5' : 'v1.0'}
+          </span>
+        </button>
       </div>
 
+      <style>{styles}</style>
+      
+      <button
+        type="submit"
+        disabled={loading}
+        className="absolute right-3 bottom-4 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-blue-500 hover:from-sky-600 hover:to-blue-600 disabled:opacity-50 transition-all shadow-lg"
+      >
+        {loading ? (
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/50 border-t-transparent" />
+        ) : (
+          <FiSend className="h-5 w-5 text-white" />
+        )}
+      </button>
+    </form>
+
+    <p className="text-center text-xs text-slate-500/80 mt-4">
+      PrivateAI can make mistakes. Verify important information.
+    </p>
+  </div>
+</div>
+
+      {/* Scroll to Bottom Button */}
       {showScrollButton && (
         <button
           onClick={scrollToBottom}
