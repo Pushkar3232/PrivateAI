@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from backend.LLM import get_response_from_llm
 from backend.chat_store import get_all_chats, create_chat, get_chat, add_message_to_chat
-from backend.genimage.image import createImg
+# from backend.genimage.image import createImg
 
 app = FastAPI()
 
