@@ -2,11 +2,13 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import StreamingResponse, PlainTextResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import json
+import re
 import os
 import uuid
 from datetime import datetime
 from backend.LLM import get_response_from_llm
 from backend.chat_store import get_all_chats, create_chat, get_chat, add_message_to_chat
+# from backend.genimage.image import createImg
 
 app = FastAPI()
 
@@ -47,6 +49,7 @@ async def handle_query(request: Request):
     body = await request.json()
     prompt = body.get("prompt")
     chat_id = body.get("chat_id")
+    model = body.get("model", "deepseek-r1:1.5b")
     
     if not prompt or not prompt.strip():
         raise HTTPException(status_code=400, detail="Empty prompt")
@@ -59,18 +62,28 @@ async def handle_query(request: Request):
     context = "\n".join([f"User: {msg['query']}\nAI: {msg['response']}" 
                        for msg in messages[-3:]])
     
-    # Create chat if none exists
+    # if "@image" in prompt:
+
+
+    # # Call createImg() and serve the generated image
+    #     createImg(prompt)  # Generate the image
+    #     image_path = "C:/Users/Pushkar/Projects/PrivateAI/server/generated_image.png"
+    #     return FileResponse(image_path, media_type="image/png")
+    
+    # Create chat if 2none exists
     if not chat_id or not chat_data:
         chat_id = create_chat()
     
     # Create final prompt with history
     full_prompt = f"{context}\nUser: {prompt}\nAI:" if context else prompt
+    pattern = re.compile(r"<Think>.*?</Think>", re.DOTALL)
+    full_prompt = re.sub(pattern, "", full_prompt)
 
     # Text response handling
     def generate():
         full_response = ""
         # Pass full_prompt to LLM instead of raw prompt
-        for chunk in get_response_from_llm(full_prompt):
+        for chunk in get_response_from_llm(full_prompt, model):
             try:
                 if isinstance(chunk, bytes):
                     chunk = chunk.decode("utf-8")
