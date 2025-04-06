@@ -170,7 +170,7 @@ const Chat = ({ currentChatId, onChatCreated }) => {
       {/* Chat Messages Container */}
       <div 
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto custom-scrollbar pt-8 pb-24 px-6"
+        className="flex-1 overflow-y-auto custom-scrollbar pt-8 pb-24 px-4 md:px-6"
         style={{
           background: `
             linear-gradient(
@@ -185,15 +185,15 @@ const Chat = ({ currentChatId, onChatCreated }) => {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full space-y-8 max-w-3xl mx-auto">
             <div className="text-center space-y-4">
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 PrivateAI
               </h1>
-              <p className="text-slate-300 text-lg font-light">
+              <p className="text-slate-300 text-base md:text-lg font-light">
                 Your intelligent assistant powered by AI
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full px-4">
               {[
                 "Explain quantum computing in simple terms",
                 "Suggest fun weekend activities",
@@ -203,11 +203,11 @@ const Chat = ({ currentChatId, onChatCreated }) => {
                 <button
                   key={index}
                   onClick={() => setQuery(prompt)}
-                  className="group relative p-4 text-left rounded-xl border border-slate-700/50 hover:border-purple-400/30 bg-slate-900/50 hover:bg-slate-800/30 transition-all duration-300 backdrop-blur-sm"
+                  className="group relative p-3 md:p-4 text-left rounded-xl border border-slate-700/50 hover:border-purple-400/30 bg-slate-900/50 hover:bg-slate-800/30 transition-all duration-300 backdrop-blur-sm"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
-                  <p className="text-slate-300 text-sm font-medium">{prompt}</p>
-                  <span className="text-xs text-purple-400/70 mt-2 block">
+                  <p className="text-slate-300 text-sm md:text-base font-medium">{prompt}</p>
+                  <span className="text-xs text-purple-400/70 mt-1 md:mt-2 block">
                     <FiPlus className="inline mr-1" />
                     Quick prompt
                   </span>
@@ -216,25 +216,25 @@ const Chat = ({ currentChatId, onChatCreated }) => {
             </div>
           </div>
         )}
-
+  
         {/* Messages List */}
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto space-y-8 px-4 md:px-6">
           {messages.map((message, index) => (
             <div key={index} className="group relative">
-              <div className={`${message.query ? 'pl-12' : 'pr-12'}`}>
+              <div className={`${message.query ? 'pl-8 md:pl-12' : 'pr-8 md:pr-12'}`}>
                 {message.query && (
-                  <div className="mb-8">
-                    <div className="inline-block bg-slate-800/60 backdrop-blur-sm rounded-2xl px-6 py-4 border border-slate-700/30 shadow-xl">
+                  <div className="mb-6 md:mb-8">
+                    <div className="inline-block bg-slate-800/60 backdrop-blur-sm rounded-2xl px-4 md:px-6 py-3 md:py-4 border border-slate-700/30 shadow-xl">
                       <Response data={message.query} type="query" />
                     </div>
                   </div>
                 )}
                 {message.response && (
                   <div className="relative">
-                    <div className="absolute -left-10 top-3 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white shadow-lg">
+                    <div className="absolute -left-6 md:-left-8 top-2 md:top-3 w-6 h-6 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white shadow-lg">
                       <span className="text-xs font-bold">AI</span>
                     </div>
-                    <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl px-6 py-4 border border-slate-700/30 shadow-xl">
+                    <div className="bg-slate-800/60 backdrop-blur-sm rounded-2xl px-4 md:px-6 py-3 md:py-4 border border-slate-700/30 shadow-xl">
                       <Response 
                         data={message.response} 
                         type={typeof message.response === 'string' ? "text" : "image"} 
@@ -247,100 +247,92 @@ const Chat = ({ currentChatId, onChatCreated }) => {
           ))}
         </div>
       </div>
-
-{/* Input Container */}
-<div className="sticky bottom-0 bg-slate-900 pb-8 px-6">
-  <div className="max-w-4xl mx-auto">
-    {/* Textarea Container */}
-    <form 
-      onSubmit={handleSubmit}
-      className="relative rounded-xl border border-slate-700/50 bg-slate-900/60 backdrop-blur-lg shadow-2xl"
-    >
-      <textarea
-        ref={textareaRef}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit(e)}
-        disabled={loading}
-        className="w-full resize-none bg-transparent p-4 pb-14 text-slate-200 placeholder-slate-500 focus:outline-none text-base scrollbar-thin"
-        placeholder="Message PrivateAI..."
-        style={{
-          minHeight: '72px',
-          overflowY: 'auto',
-          paddingLeft: '1.9rem',
-          paddingRight: '1.9rem',
-        }}
-      />
-
-      {/* XPro Button aligned with text */}
-      <div className="absolute left-7 bottom-[18px] z-10">
-        <button
-          type="button"
-          onClick={toggleModelVersion}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 border ${
-            modelVersion === 'deepseek-r1' // Pro model check
-              ? 'bg-purple-500/10 border-purple-400/30 hover:bg-purple-500/20 shadow-lg shadow-purple-500/20'
-              : 'bg-slate-700/20 border-slate-600/30 hover:bg-slate-700/30'
-          } group relative`}
-        >
-          {/* Glow effect for PRO state */}
-          {modelVersion === 'deepseek-r1' && (
-            <div className="absolute inset-0 rounded-xl animate-pro-glow" />
-          )}
-          
-          <FiZap className={`w-4 h-4 ${
-            modelVersion === 'deepseek-r1' // Pro model check
-              ? 'text-purple-400' 
-              : 'text-slate-500'
-          } transition-colors`} />
-          
-          <span className={`text-sm font-medium ${
-            modelVersion === 'deepseek-r1' // Pro model check
-              ? 'bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent'
-              : 'text-slate-400'
-          } transition-all`}>
-            XPro
-          </span>
-          
-          {/* Version badge */}
-          <span className={`text-[10px] font-mono ${
-            modelVersion === 'deepseek-r1' // Pro model check
-              ? 'text-purple-400/70'
-              : 'text-slate-500/70'
-          }`}>
-            {modelVersion === 'deepseek-r1' ? 'v1.5' : 'v1.0'}
-          </span>
-        </button>
+  
+      {/* Input Container */}
+      <div className="sticky bottom-0 bg-slate-900 pb-4 md:pb-8 px-4 md:px-6">
+        <div className="max-w-4xl mx-auto">
+          <form 
+            onSubmit={handleSubmit}
+            className="relative rounded-xl border border-slate-700/50 bg-slate-900/60 backdrop-blur-lg shadow-2xl"
+          >
+            <textarea
+              ref={textareaRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmit(e)}
+              disabled={loading}
+              className="w-full resize-none bg-transparent p-4 pb-14 text-slate-200 placeholder-slate-500 focus:outline-none text-sm md:text-base scrollbar-thin"
+              placeholder="Message PrivateAI..."
+              style={{
+                minHeight: '72px',
+                overflowY: 'auto',
+                paddingLeft: '1.9rem',
+                paddingRight: '1.9rem',
+              }}
+            />
+  
+            {/* XPro Button */}
+            <div className="absolute left-4 md:left-7 bottom-4 md:bottom-[18px] z-10">
+              <button
+                type="button"
+                onClick={toggleModelVersion}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 border ${
+                  modelVersion === 'deepseek-r1'
+                    ? 'bg-purple-500/10 border-purple-400/30 hover:bg-purple-500/20 shadow-lg shadow-purple-500/20'
+                    : 'bg-slate-700/20 border-slate-600/30 hover:bg-slate-700/30'
+                } group relative`}
+              >
+                {modelVersion === 'deepseek-r1' && (
+                  <div className="absolute inset-0 rounded-xl animate-pro-glow" />
+                )}
+                <FiZap className={`w-4 h-4 ${
+                  modelVersion === 'deepseek-r1' 
+                    ? 'text-purple-400' 
+                    : 'text-slate-500'
+                }`} />
+                <span className={`text-sm font-medium ${
+                  modelVersion === 'deepseek-r1'
+                    ? 'bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent'
+                    : 'text-slate-400'
+                }`}>
+                  XPro
+                </span>
+                <span className={`text-[10px] font-mono ${
+                  modelVersion === 'deepseek-r1'
+                    ? 'text-purple-400/70'
+                    : 'text-slate-500/70'
+                }`}>
+                  {modelVersion === 'deepseek-r1' ? 'v1.5' : 'v1.0'}
+                </span>
+              </button>
+            </div>
+  
+            <button
+              type="submit"
+              disabled={loading}
+              className="absolute right-3 bottom-4 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-blue-500 hover:from-sky-600 hover:to-blue-600 disabled:opacity-50 transition-all shadow-lg"
+            >
+              {loading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/50 border-t-transparent" />
+              ) : (
+                <FiSend className="h-5 w-5 text-white" />
+              )}
+            </button>
+          </form>
+  
+          <p className="text-center text-xs text-slate-500/80 mt-3 md:mt-4">
+            PrivateAI can make mistakes. Verify important information.
+          </p>
+        </div>
       </div>
-
-      <style>{styles}</style>
-      
-      <button
-        type="submit"
-        disabled={loading}
-        className="absolute right-3 bottom-4 flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-blue-500 hover:from-sky-600 hover:to-blue-600 disabled:opacity-50 transition-all shadow-lg"
-      >
-        {loading ? (
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/50 border-t-transparent" />
-        ) : (
-          <FiSend className="h-5 w-5 text-white" />
-        )}
-      </button>
-    </form>
-
-    <p className="text-center text-xs text-slate-500/80 mt-4">
-      PrivateAI can make mistakes. Verify important information.
-    </p>
-  </div>
-</div>
-
+  
       {/* Scroll to Bottom Button */}
       {showScrollButton && (
         <button
           onClick={scrollToBottom}
-          className="fixed bottom-24 right-8 p-3 bg-slate-800/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-slate-700/50 transition-colors border border-slate-700/30 hover:border-purple-400/30 group"
+          className="fixed bottom-20 md:bottom-24 right-4 md:right-8 p-2 md:p-3 bg-slate-800/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-slate-700/50 transition-colors border border-slate-700/30 hover:border-purple-400/30 group"
         >
-          <FiArrowDown className="w-5 h-5 text-slate-300 group-hover:text-purple-400 transition-colors" />
+          <FiArrowDown className="w-4 h-4 md:w-5 md:h-5 text-slate-300 group-hover:text-purple-400 transition-colors" />
         </button>
       )}
     </div>

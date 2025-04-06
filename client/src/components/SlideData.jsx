@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { FiPlus, FiClock, FiMessageSquare } from 'react-icons/fi'
+import { FiPlus, FiClock, FiMessageSquare, FiX, FiChevronLeft } from 'react-icons/fi'
 import { formatDistanceToNow } from 'date-fns'
 
-const SlideData = ({ onSelectChat, currentChatId, refreshChats }) => {
+const SlideData = ({ onSelectChat, currentChatId, refreshChats, onToggle, isVisible }) => {
   const [chats, setChats] = useState([])
   const [loading, setLoading] = useState(true)
 
