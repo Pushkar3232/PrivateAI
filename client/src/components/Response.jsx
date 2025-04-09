@@ -68,167 +68,38 @@ const CodeBlock = ({ code, language, onCopy }) => {
 };
 
 const MarkdownRenderer = ({ content }) => {
-  const processInlineMarkdown = useCallback((text) => {
-    return text.split(/(\*\*\*.*?\*\*\*|\*\*.*?\*\*|\*.*?\*|`.*?`)/g).map((part, index) => {
-      if (part.match(/^\*\*\*(.*?)\*\*\*$/)) {
-        return <strong key={`strongem-${index}`} className="font-semibold italic">{part.slice(3, -3)}</strong>;
+  const renderContent = useCallback((text) => {
+    const segments = text.split(/(```[\s\S]*?(?:```|$))/g);
+    return segments.map((segment, index) => {
+      if (segment.startsWith('```')) {
+        const codeMatch = segment.match(/```(\w+)?\n([\s\S]*?)(?:```|$)/);
+        if (codeMatch) {
+          const lang = codeMatch[1] || '';
+          const code = codeMatch[2].trim();
+          return <CodeBlock key={`code-${index}`} code={code} language={lang} />;
+        }
       }
-      if (part.match(/^\*\*(.*?)\*\*$/)) {
-        return <strong key={`strong-${index}`} className="font-semibold">{part.slice(2, -2)}</strong>;
-      }
-      if (part.match(/^\*(.*?)\*$/)) {
-        return <em key={`em-${index}`} className="italic">{part.slice(1, -1)}</em>;
-      }
-      if (part.match(/^`(.*?)`$/)) {
-        return <code key={`code-${index}`} className="font-mono bg-gray-700 px-1.5 py-0.5 rounded text-sm">{part.slice(1, -1)}</code>;
-      }
-      return part;
+      return (
+        <div
+          key={`text-${index}`}
+          className="text-slate-200 leading-relaxed tracking-wide"
+          dangerouslySetInnerHTML={{
+            __html: segment
+              .replace(/^### (.*)$/gm, '<h3 class="text-xl font-semibold mb-3">$1</h3>')
+              .replace(/^## (.*)$/gm, '<h2 class="text-2xl font-bold mb-4">$1</h2>')
+              .replace(/^# (.*)$/gm, '<h1 class="text-3xl font-bold mb-6">$1</h1>')
+              .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+              .replace(/^\* (.+)$/gm, '<ul class="list-disc pl-6 my-3"><li>$1</li></ul>')
+              .replace(/^\d+\. (.+)$/gm, '<ol class="list-decimal pl-6 my-3"><li>$1</li></ol>')
+              .replace(/\n/g, '<br />')
+          }}
+        />
+      );
     });
   }, []);
 
-  const renderContent = useCallback((text) => {
-    const blocks = text.split(/(```[\s\S]*?```)/g);
-
-    return (
-      <div className="max-w-2xl mx-auto px-4">
-        {blocks.map((block, blockIndex) => {
-          if (block.startsWith('```')) {
-            const match = block.match(/```(\w*)\n([\s\S]*?)```/s);
-            if (match) {
-              return <CodeBlock key={`code-${blockIndex}`} code={match[2].trim()} language={match[1]} />;
-            }
-          }
-
-          let currentList = null;
-          let listItems = [];
-          const elements = [];
-
-          const flushList = () => {
-            if (listItems.length > 0) {
-              elements.push(
-                currentList === 'ol' 
-                  ? <ol key={`list-${elements.length}`} className="list-decimal pl-8 my-4 space-y-2">{listItems}</ol>
-                  : <ul key={`list-${elements.length}`} className="list-disc pl-8 my-4 space-y-2">{listItems}</ul>
-              );
-              listItems = [];
-              currentList = null;
-            }
-          };
-
-          block.split('\n').forEach((line, lineIndex) => {
-            const trimmedLine = line.trim();
-            
-            // Form Field Detection
-            // if (trimmedLine.toLowerCase().includes('input field')) {
-            //   flushList();
-            //   elements.push(
-            //     <div key={`input-${lineIndex}`} className="my-4">
-            //       <input
-            //         type={trimmedLine.includes('password') ? 'password' : 'text'}
-            //         className="w-full bg-gray-800 rounded-lg px-4 py-3 text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            //         placeholder={trimmedLine.replace(/.*for\s+/i, '')}
-            //       />
-            //     </div>
-            //   );
-            // }
-            // // Button Detection
-            // else if (trimmedLine.toLowerCase().includes('sign in button')) {
-            //   flushList();
-            //   elements.push(
-            //     <button
-            //       key={`btn-${lineIndex}`}
-            //       className="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-medium transition-colors my-4"
-            //     >
-            //       Sign In
-            //     </button>
-            //   );
-            // }
-            // Social Media Detection
-            if (trimmedLine.toLowerCase().includes('social media links')) {
-              flushList();
-              elements.push(
-                <div key={`social-${lineIndex}`} className="flex gap-4 justify-center my-6">
-                  <button className="p-2 rounded-lg hover:bg-gray-800 transition-colors">
-                    <svg className="w-6 h-6 text-current" viewBox="0 0 24 24">
-                      {/* Google Icon SVG */}
-                    </svg>
-                  </button>
-                  <button className="p-2 rounded-lg hover:bg-gray-800 transition-colors">
-                    <svg className="w-6 h-6 text-current" viewBox="0 0 24 24">
-                      {/* Facebook Icon SVG */}
-                    </svg>
-                  </button>
-                </div>
-              );
-            }
-            // Error Message Detection
-            // else if (trimmedLine.toLowerCase().includes('error message')) {
-            //   flushList();
-            //   elements.push(
-            //     <div key={`error-${lineIndex}`} className="mt-4 p-3 bg-red-900/30 text-red-400 rounded-lg">
-            //       {trimmedLine.replace(/error message:/i, '')}
-            //     </div>
-            //   );
-            // }
-            // Headers
-            else if (trimmedLine.startsWith('### ')) {
-              flushList();
-              elements.push(<h3 key={`h3-${lineIndex}`} className="text-xl font-semibold mt-6 mb-3">{processInlineMarkdown(trimmedLine.slice(4))}</h3>);
-            } else if (trimmedLine.startsWith('## ')) {
-              flushList();
-              elements.push(<h2 key={`h2-${lineIndex}`} className="text-2xl font-bold mt-6 mb-4">{processInlineMarkdown(trimmedLine.slice(3))}</h2>);
-            } else if (trimmedLine.startsWith('# ')) {
-              flushList();
-              elements.push(<h1 key={`h1-${lineIndex}`} className="text-3xl font-bold mt-6 mb-5">{processInlineMarkdown(trimmedLine.slice(2))}</h1>);
-            }
-            // Lists
-            else if (/^\d+\.\s/.test(trimmedLine)) {
-              if (currentList !== 'ol') flushList();
-              currentList = 'ol';
-              listItems.push(
-                <li key={`ol-${lineIndex}`} className="text-gray-100/90">
-                  {processInlineMarkdown(trimmedLine.replace(/^\d+\.\s/, ''))}
-                </li>
-              );
-            } else if (/^-\s/.test(trimmedLine)) {
-              if (currentList !== 'ul') flushList();
-              currentList = 'ul';
-              listItems.push(
-                <li key={`ul-${lineIndex}`} className="text-gray-100/90">
-                  {processInlineMarkdown(trimmedLine.replace(/^-\s/, ''))}
-                </li>
-              );
-            }
-            // Paragraphs
-            else if (trimmedLine) {
-              flushList();
-              elements.push(
-                <p key={`p-${lineIndex}`} className="text-gray-100 mb-4 leading-relaxed">
-                  {processInlineMarkdown(trimmedLine)}
-                </p>
-              );
-            } else {
-              flushList();
-              if (elements.length > 0) {
-                elements.push(<br key={`br-${lineIndex}`} className="my-2" />);
-              }
-            }
-          });
-
-          flushList();
-          return <div key={`block-${blockIndex}`} className="mb-6">{elements}</div>;
-        })}
-      </div>
-    );
-  }, [processInlineMarkdown]);
-
-  return (
-    <div className="prose prose-invert max-w-none">
-      <div className="flex flex-col gap-6 py-8">
-        {renderContent(content)}
-      </div>
-    </div>
-  );
+  return <div className="prose prose-invert max-w-none">{renderContent(content)}</div>;
 };
 
 const Response = ({ data, type }) => {
