@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from pymongo import MongoClient
+from .vector_db import vector_db
 
 # Connect to MongoDB (adjust the connection string as needed)
 client = MongoClient("mongodb://localhost:27017/")
@@ -47,9 +48,18 @@ def add_message_to_chat(chat_id, query, response):
         "response": response,
         "timestamp": datetime.now().isoformat()
     }
+    
+    # Get current messages count first
+    chat_data = get_chat(chat_id)
+    message_index = len(chat_data.get("messages", []))
+    
     result = chats_collection.update_one(
         {"id": chat_id},
         {"$push": {"messages": message}}
     )
+    
     if result.matched_count == 0:
         raise ValueError(f"Chat {chat_id} not found")
+    
+    # Add to vector DB after MongoDB insertion
+    vector_db.add_message(chat_id, message, message_index)

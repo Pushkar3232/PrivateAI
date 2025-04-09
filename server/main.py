@@ -8,6 +8,7 @@ import uuid
 from datetime import datetime
 from backend.LLM import get_response_from_llm
 from backend.chat_store import get_all_chats, create_chat, get_chat, add_message_to_chat
+from backend.vector_db import vector_db
 # from backend.genimage.image import createImg
 
 app = FastAPI()
@@ -44,6 +45,7 @@ async def create_chat_endpoint():
     chat_id = create_chat()
     return {"chat_id": chat_id}
 
+# Modify the handle_query endpoint
 @app.post("/api/data")
 async def handle_query(request: Request):
     body = await request.json()
@@ -54,13 +56,22 @@ async def handle_query(request: Request):
     if not prompt or not prompt.strip():
         raise HTTPException(status_code=400, detail="Empty prompt")
 
-    # Get chat history
+    # Get semantic context from vector DB
+    similar_messages = vector_db.query_messages(prompt,chat_id)
+    vector_context = []
+    for meta in similar_messages:
+        chat_data = get_chat(meta["chat_id"])
+        if chat_data and len(chat_data["messages"]) > meta["message_index"]:
+            msg = chat_data["messages"][meta["message_index"]]
+            vector_context.append(f"Previous conversation: {msg['query']}\nResponse: {msg['response']}")
+
+    # Get current chat context
     chat_data = get_chat(chat_id) if chat_id else None
     messages = chat_data.get("messages", []) if chat_data else []
-    
-    # Build conversation context from last 3 messages
-    context = "\n".join([f"User: {msg['query']}\nAI: {msg['response']}" 
-                       for msg in messages[-3:]])
+    current_context = "\n".join(
+        [f"User: {msg['query']}\nAI: {msg['response']}" 
+        for msg in messages[-2:]]
+    )
     
     # if "@image" in prompt:
 
@@ -75,9 +86,23 @@ async def handle_query(request: Request):
         chat_id = create_chat()
     
     # Create final prompt with history
-    full_prompt = f"{context}\nUser: {prompt}\nAI:" if context else prompt
-    pattern = re.compile(r"<Think>.*?</Think>", re.DOTALL)
-    full_prompt = re.sub(pattern, "", full_prompt)
+    # Join the context parts
+    full_context = "\n\n".join([
+        "Relevant previous conversations:",
+        "\n\n".join(vector_context),
+        "Current conversation:",
+        current_context,
+        f"New query: {prompt}"
+    ])
+    
+    # Remove <Think> tags (case-insensitive) and content between them
+    pattern = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+    full_prompt = re.sub(pattern, "", full_context)
+    
+    # Remove duplicate "New query" entries by splitting and taking last
+    full_prompt = full_prompt.rsplit("New query:", 1)[0] + f"New query: {prompt}"
+    
+    print(full_prompt)
 
     # Text response handling
     def generate():
