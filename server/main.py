@@ -21,6 +21,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+def build_mcp_context(prompt: str, vector_context: list, current_context: str) -> str:
+    """Builds MCP-formatted context"""
+    separator = '\n\n'  # Define separator outside the f-string
+    examples = separator.join(vector_context) if vector_context else 'No relevant examples found'
+    conversation_context = current_context if current_context else 'No recent conversation'
+    
+    return f"""# Model Context Protocol
+
+## Persona
+You are a helpful, knowledgeable AI assistant. Maintain a professional yet friendly tone.
+
+## Task
+Address this query: "{prompt}"
+Consider both recent conversation history and relevant past examples.
+
+## Examples from Knowledge Base
+{examples}
+
+## Current Conversation Context
+{conversation_context}
+
+## Response Guidelines
+1. Be concise but comprehensive
+2. Use Markdown formatting where appropriate
+3. Acknowledge uncertainty when needed
+4. Maintain logical flow with previous messages
+
+# Query to Process
+{prompt}"""
 
 CHATS_DIR = "./chats"
 
@@ -57,13 +86,15 @@ async def handle_query(request: Request):
         raise HTTPException(status_code=400, detail="Empty prompt")
 
     # Get semantic context from vector DB
-    similar_messages = vector_db.query_messages(prompt,chat_id)
+    similar_messages = vector_db.query_messages(prompt, chat_id)
     vector_context = []
     for meta in similar_messages:
         chat_data = get_chat(meta["chat_id"])
         if chat_data and len(chat_data["messages"]) > meta["message_index"]:
             msg = chat_data["messages"][meta["message_index"]]
-            vector_context.append(f"Previous conversation: {msg['query']}\nResponse: {msg['response']}")
+            vector_context.append(
+                f"User: {msg['query']}\nAssistant: {msg['response']}"
+            )
 
     # Get current chat context
     chat_data = get_chat(chat_id) if chat_id else None
@@ -72,43 +103,24 @@ async def handle_query(request: Request):
         [f"User: {msg['query']}\nAI: {msg['response']}" 
         for msg in messages[-2:]]
     )
-    
-    # if "@image" in prompt:
 
-
-    # # Call createImg() and serve the generated image
-    #     createImg(prompt)  # Generate the image
-    #     image_path = "C:/Users/Pushkar/Projects/PrivateAI/server/generated_image.png"
-    #     return FileResponse(image_path, media_type="image/png")
-    
-    # Create chat if 2none exists
     if not chat_id or not chat_data:
         chat_id = create_chat()
-    
-    # Create final prompt with history
-    # Join the context parts
-    full_context = "\n\n".join([
-        "Relevant previous conversations:",
-        "\n\n".join(vector_context),
-        "Current conversation:",
-        current_context,
-        f"New query: {prompt}"
-    ])
-    
-    # Remove <Think> tags (case-insensitive) and content between them
-    pattern = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
-    full_prompt = re.sub(pattern, "", full_context)
-    
-    # Remove duplicate "New query" entries by splitting and taking last
-    full_prompt = full_prompt.rsplit("New query:", 1)[0] + f"New query: {prompt}"
-    
-    print(full_prompt)
 
-    # Text response handling
+    # Build MCP-formatted prompt
+    mcp_prompt = build_mcp_context(
+        prompt=prompt,
+        vector_context=vector_context,
+        current_context=current_context
+    )
+
+    # Remove any residual formatting artifacts
+    mcp_prompt = re.sub(r"<think>.*?</think>", "", mcp_prompt, flags=re.DOTALL|re.IGNORECASE)
+    print("Final MCP Prompt:\n", mcp_prompt)
+
     def generate():
         full_response = ""
-        # Pass full_prompt to LLM instead of raw prompt
-        for chunk in get_response_from_llm(full_prompt, model):
+        for chunk in get_response_from_llm(mcp_prompt, model):
             try:
                 if isinstance(chunk, bytes):
                     chunk = chunk.decode("utf-8")
