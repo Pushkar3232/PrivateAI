@@ -168,6 +168,7 @@ const Chat = ({ currentChatId, onChatCreated }) => {
   return (
     <div className="flex-1 flex flex-col relative bg-slate-900/60 backdrop-blur-lg border-l border-slate-700/30 overflow-hidden">
       {/* Chat Messages Container */}
+      <br />
       <div 
         ref={chatContainerRef}
         className="flex-1 overflow-y-auto custom-scrollbar pt-8 pb-24 px-4 md:px-6"
